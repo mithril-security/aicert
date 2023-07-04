@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "aicert"
+version = "0.1.0"
+description = ""
+authors = ["Mehdi BESSAA <mehdi.bessaa@mithrilsecurity.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+rich = { version = "^13.3.5" }
+pyyaml = { version = "^6.0" }
+pydantic = { version = "^1.10.7" }
+inquirer = { version = "^3.1" }
+typer = { version = "^0.9.0" }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+aicert = 'aicert.cli.main:app'
