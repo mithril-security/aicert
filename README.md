@@ -45,7 +45,6 @@
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
-</br>
 <!-- ABOUT THE PROJECT -->
 
 ## 🔒 About The Project
@@ -54,7 +53,6 @@
 
 | ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
 | --- |
-</br>
 
 ## 🗝️ Why use AICert?
 
@@ -79,7 +77,6 @@
 
 + A key capability of TPMs is that they can **create measurements of the state of a device**. They can measure information relating to the firmware, bootloader and OS and OS confugration of the device.
 
-</br>
 
 ### Usage in AICert
 
@@ -89,7 +86,7 @@ In AICert, we use TPMs to:
 - **Sign a model** with an **attestation key (AK)** derived from the unique **forge-proof TPM Endorsement Key (EK)**. 
 - **Measure the identity of the machine** a model was created on.
 
-</br>
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 <!-- CONTACT -->
 
 ## 📇 Contact
