@@ -40,8 +40,8 @@
   <summary>Table of Contents</summary>
   <ol>
     <li><a href="#-about-the-project">About The Project</a></li>
-	<li><a href="#-why-use-aicert">Why use AICert?</a></li>
-    <li><a href="#-technology-overview">Technology Overview</a></li>
+	<li><a href="#-🗝️-why-use-aicert">Why use AICert?</a></li>
+    <li><a href="#-🛠️ -technology-overview">Technology Overview</a></li>
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
