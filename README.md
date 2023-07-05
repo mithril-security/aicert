@@ -40,8 +40,8 @@
   <summary>Table of Contents</summary>
   <ol>
     <li><a href="#-about-the-project">About The Project</a></li>
-	<li><a href="#-🗝️-why-use-aicert">Why use AICert?</a></li>
-    <li><a href="#-🛠️ -technology-overview">Technology Overview</a></li>
+	<li><a href="#-why-use-aicert">Why use AICert?</a></li>
+    <li><a href="#technology-overview">Technology Overview</a></li>
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
@@ -54,7 +54,7 @@
 | ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
 | --- |
 
-## 🗝️ Why use AICert?
+## 🔑 Why use AICert?
 
 + **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code.
 + **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards.
@@ -65,7 +65,7 @@
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🛠️ Technology Overview
+## 💡 Technology Overview
 
 ### Trusted Platform Modules (TPMs)
 
