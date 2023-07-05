@@ -19,6 +19,7 @@
 [![Website][website-shield]][website-url]
 [![Blog][blog-shield]][blog-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
+</div>
 
   <!-- <p align="center">
     <b>Quickly deploy your SaaS solutions while preserving your users' data privacy.
@@ -32,7 +33,7 @@
     ·
     <a href="https://github.com/mithril-security/aicert/issues">Request Feature</a>
   </p>
-</div> -->
+</div>
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -44,39 +45,43 @@
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
-
+</br>
 <!-- ABOUT THE PROJECT -->
+
 ## 🔒 About The Project
 
 **AICert** aims to make AI **traceable** and **transparent** and help us to achieve **input and output integrity for AI models**. By leveraging **Trusted Platform Modules (TPMs)**, we are able to **attest**, or verify, the identity of models, training data and the machines they were trained on. This means users can **verify** they are querying an authentic model that has not been tampered with. It also offers traceability concerning how a model was trained and with which data, which helps to safeguard against the threat of model poisoning. AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI.
 
 | ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
 | --- |
+</br>
 
 ## 🗝️ Why use AICert?
 
 + **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code.
 + **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards.
 + **Flexible training:** use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image.
- + **Easy to install and use**
++ **Easy to install and use**
 
 > You can check out [the project code on our GitHub](https://github.com/mithril-security/aicert/).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Technology overview
+## 🛠️ Technology overview
 
 ### Trusted Platform Modules (TPMs)
 
-TPMs are **specialized hardware chips** that exist on most modern laptop or computers that were designed to enhance security.
++ TPMs are **specialized hardware chips** that exist on most modern laptop or computers that were designed to enhance security.
 
-When we store data on a machine in RAM or on a hardrive, that memory can be accessed and manipulated by the system's OS. Data stored on TPMs, however, **cannot be manipulated ot tampered with by the OS!**
++ When we store data on a machine in RAM or on a hardrive, that memory can be accessed and manipulated by the system's OS. Data stored on TPMs, however, **cannot be manipulated ot tampered with by the OS!**
 
-TPMS have various use cases such as the **secure storage of secrets** and **attesation**.
++ TPMS have various use cases such as the **secure storage of secrets** and **attesation**.
 
-A key capability of TPMs is that they can **create measurements of the state of a device**. They can measure information relating to the firmware, bootloader and OS and OS confugration of the device.
++ A key capability of TPMs is that they can **create measurements of the state of a device**. They can measure information relating to the firmware, bootloader and OS and OS confugration of the device.
 
-#### Usage in AICert
+</br>
+
+### Usage in AICert
 
 In AICert, we use TPMs to:
 
@@ -84,8 +89,9 @@ In AICert, we use TPMs to:
 - **Sign a model** with an **attestation key (AK)** derived from the unique **forge-proof TPM Endorsement Key (EK)**. 
 - **Measure the identity of the machine** a model was created on.
 
-
+</br>
 <!-- CONTACT -->
+
 ## 📇 Contact
 
 Mithril Security - [@MithrilSecurity](https://twitter.com/MithrilSecurity) - contact@mithrilsecurity.io
@@ -120,6 +126,5 @@ Project Link: [https://github.com/mithril-security/aicert](https://github.com/mi
 [Intel-SGX]: https://img.shields.io/badge/SGX-FFD43B?style=for-the-badge&logo=intel&logoColor=black
 [Intel-sgx-url]: https://www.intel.fr/content/www/fr/fr/architecture-and-technology/software-guard-extensions.html
 [Tract]: https://img.shields.io/badge/Tract-FFD43B?style=for-the-badge
-[tract-url]: https://github.com/mithril-security/tract/tree/6e4620659837eebeaba40ab3eeda67d33a99c7cf -->
-
+<!-- [tract-url]: https://github.com/mithril-security/tract/tree/6e4620659837eebeaba40ab3eeda67d33a99c7cf -->
 <!-- Done using https://github.com/othneildrew/Best-README-Template -->
