@@ -49,7 +49,7 @@
 
 ## 🔒 About The Project
 
-**AICert** aims to make AI **traceable** and **transparent** and help us to achieve **input and output integrity for AI models**. By leveraging **Trusted Platform Modules (TPMs)**, we are able to **attest**, or verify, the identity of models, training data and the machines they were trained on. This means users can **verify** they are querying an authentic model that has not been tampered with. It also offers traceability concerning how a model was trained and with which data, which helps to safeguard against the threat of model poisoning. AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI.
+**AICert** aims to make AI **traceable** and **transparent** and provide **input and output integrity for AI models**. By leveraging **Trusted Platform Modules (TPMs)**, we are able to **verify** the identity of models, training data and the machines they were trained on. This means users can **verify** they are using an authentic model that has not been tampered with. By measuring the training data used by models, **AICert** also allows us to safeguard against the threat of model poisoning. AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI.
 
 | ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
 | --- |
