@@ -41,6 +41,7 @@
   <ol>
     <li><a href="#-about-the-project">About The Project</a></li>
 	<li><a href="#-why-use-aicert">Why use AICert?</a></li>
+    <li><a href="#-usage">Usage</a></li>
     <li><a href="#-technology-overview">Technology Overview</a></li>
     <li><a href="#-contact">Contact</a></li>
   </ol>
@@ -64,6 +65,47 @@
 > You can check out [the project code on our GitHub](https://github.com/mithril-security/aicert/).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 📜 Usage
+
+### How to create your AICert cryptographic proof file while training your mode
+
+To start the secure training process, you need to provide the docker image you intend to use for the training of your model and the training dataset. You can also specify the names you wish your output model and cryptographic proof file to have.
+
+```bash
+aicert --input-container "santacoder_training:v1" --dataset-source "data/train.csv" --output-model "santacoder.pth" --output-bom "proof.json"
+```
+
+AICert will then create a VM that will be used for the training process. 
+
+> Note, the training process might take a while, depending on your input model and the training dataset. 
+
+During the training process, AICert will store the hashes of the 'software bill of materials'. This includes:
++ The user dataset
++ The input model
++ The output model
++ The engine used for the training
+
+These hashes are signed using the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK). 
+
+This data is also stored inside the TPM. 
+
+Once the training process is over, the signed hashes will be stored inside a cryptographic proof file, and the trained model is then exported, ready to be used.
+
+### How to verify the integrity of an AICert cryptographic proof file
+
+You can verify at any time the exported proof file to make sure the proof file is genuine, using the `verify() method` provided by AICert
+
+```python
+import aicert.
+
+# Verify the validity of the data within the proof file
+aicert.verify("proof.json") 
+```
+
+AICert is able to verify that each data value is genuine by matching it against the TPM that was used for the validation. 
+
+⚠️ An error will be raised if the cryptographic proof is invalid or does not match the data available on the TPM!
 
 ## 💡 Technology Overview
 
