@@ -21,9 +21,9 @@
 [![LinkedIn][linkedin-shield]][linkedin-url]
 </div>
 
-  <!-- <p align="center">
-    <b>Quickly deploy your SaaS solutions while preserving your users' data privacy.
-	<br /><br />
+ <p align="center">
+    <b>Making AI Traceable and Transparent<br /><br />
+   <!-- 
     <a href="https://aicert.mithrilsecurity.io/en/latest"><strong>Explore the docs »</strong></a>
     <br />
     <br />
@@ -46,11 +46,21 @@
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
-<!-- ABOUT THE PROJECT -->
 
 ## 🔒 About The Project
 
-**AICert** aims to make AI **traceable** and **transparent** and provide **input and output integrity for AI models**. By leveraging **Trusted Platform Modules (TPMs)**, we are able to **verify** the identity of models, training data and the machines they were trained on. This means users can **verify** they are using an authentic model that has not been tampered with. By measuring the training data used by models, **AICert** also allows us to safeguard against the threat of model poisoning. AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI.
+**AICert** aims to make AI **traceable** and **transparent** by enabling **AI Vendors** to create **cryptographic proofs** relating to their models and the data they have been trained with. **End users** can then use these proofs to **verify they are using authentic models** that have not been tampered with.
+
+We leverage **Trusted Platform Modules (TPMs)** in order to measure models, their training data and the machines they were trained on. We bind these measures into a single cryptographic proof file.
+
+AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI.
+
+### Why AICert?
+
++ Allows end users to check AI model provenance
++ Gives AI vendors a traceable record of the training model
++ By attesting training data, we can safeguard against the threat of model poisoning
++ Helps AI vendors achieve compliance and improve security posture surrounding AI
 
 | ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
 | --- |
