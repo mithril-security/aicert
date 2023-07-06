@@ -54,20 +54,20 @@ We leverage **Trusted Platform Modules (TPMs)** in order to measure models, thei
 
 AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI, enabling AI vendors to:
 
-+ Prove AI model provenance ✅
-+ Keep a traceable record of the model training process ✅
-+ Safeguard against the threat of model poisoning ✅
-+ Achieve compliance and improve security posture ✅
++ Prove AI model provenance
++ Keep a traceable record of the model training process
++ Safeguard against the threat of model poisoning
++ Achieve compliance and improve security posture
 
 | ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
 | --- |
 
 ## 🔍 Why use AICert?
 
-+ **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code ✅
-+ **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards ✅
-+ **Flexible training:** use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image ✅
-+ **Easy to install and use** ✅
++ **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
++ **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards
++ **Flexible training:** use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image
++ **Easy to install and use**
 
 > You can check out [the project code on our GitHub](https://github.com/mithril-security/aicert/).
 
