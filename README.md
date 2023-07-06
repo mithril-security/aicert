@@ -18,7 +18,6 @@
 
 [![Website][website-shield]][website-url]
 [![Blog][blog-shield]][blog-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 </div>
 
  <p align="center">
@@ -143,10 +142,9 @@ In AICert, we use TPMs to:
 
 ## 📇 Contact
 
-
-<a href="https://www.mithrilsecurity.io/contact" style="display: inline-block; background-color: #e5b22b; color: #030e1a; padding: 10px 20px; text-decoration: none;">Contact us</a>
-
-Project Link: [https://github.com/mithril-security/aicert](https://github.com/mithril-security/aicert)
+[![Contact us][contact]][contact-url]
+[![Twitter][twitter]][website-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -160,9 +158,15 @@ Project Link: [https://github.com/mithril-security/aicert](https://github.com/mi
 [stars-url]: https://github.com/mithril-security/blindbox/stargazers
 [issues-shield]: https://img.shields.io/github/issues/mithril-security/aicert.svg?style=for-the-badge
 <!-- [issues-url]: https://github.com/mithril-security/aicert/issues -->
+[project-url]: https://github.com/mithril-security/aicert
+[twitter-url]: https://twitter.com/MithrilSecurity
+[contact-url]: https://www.mithrilsecurity.io/contact
 [license-shield]: https://img.shields.io/github/license/mithril-security/aicert.svg?style=for-the-badge
+[contact]: https://img.shields.io/badge/Contact_us-000000?style=for-the-badge&colorB=555
+[project]: https://img.shields.io/badge/Project-000000?style=for-the-badge&colorB=555
 [license-url]: https://github.com/mithril-security/aicert/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white&colorB=555
+[twitter]: https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white
 [linkedin-url]: https://www.linkedin.com/company/mithril-security-company/
 [website-url]: https://www.mithrilsecurity.io
 [website-shield]: https://img.shields.io/badge/website-000000?style=for-the-badge&colorB=555
