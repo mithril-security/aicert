@@ -75,8 +75,6 @@ AICert addresses some of the most urgent concerns related to **privacy, security
 
 ## 📜 Usage
 
-![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
-
 ### How to create your AICert cryptographic proof file while training your mode
 
 To start the secure training process, you need to provide the docker image you intend to use for the training of your model and the training dataset. You can also specify the names you wish your output model and cryptographic proof file to have.
@@ -100,6 +98,8 @@ These hashes are signed using the TPM's Attestation Key (AK), which is derived f
 This data is also stored inside the TPM. 
 
 Once the training process is over, the signed hashes will be stored inside a cryptographic proof file, and the trained model is then exported, ready to be used.
+
+![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
 
 ### How to verify the integrity of an AICert cryptographic proof file
 
