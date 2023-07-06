@@ -75,6 +75,8 @@ AICert addresses some of the most urgent concerns related to **privacy, security
 
 ## 📜 Usage
 
+![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
+
 ### How to create your AICert cryptographic proof file while training your mode
 
 To start the secure training process, you need to provide the docker image you intend to use for the training of your model and the training dataset. You can also specify the names you wish your output model and cryptographic proof file to have.
