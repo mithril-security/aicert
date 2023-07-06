@@ -77,29 +77,31 @@ AICert addresses some of the most urgent concerns related to **privacy, security
 
 ### How to create an AICert proof file during model training
 
-![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
-
 To start the secure training process, you need to provide the docker image you intend to use for the training of your model and the training dataset. You can also specify the names you wish your output model and cryptographic proof file to have.
 
 ```bash
 aicert --input-container "santacoder_training:v1" --dataset-source "data/train.csv" --output-model "santacoder.pth" --output-bom "proof.json"
 ```
 
-AICert will then create a VM that will be used for the training process. 
+This will trigger the following automated workflow:
+
+![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
+
+1. AICert will then create a VM that will be used for the training process. 
 
 > Note, the training process might take a while, depending on your input model and the training dataset. 
 
-During the training process, AICert will store the hashes of the 'software bill of materials'. This includes:
+2. AICert will then create the hashes of the 'software bill of materials'. This includes:
 + The user dataset
 + The input model
 + The output model
 + The engine used for the training
 
-These hashes are signed using the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK). 
+These hashes are signed using the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK). This data is also stored inside the TPM.
 
-This data is also stored inside the TPM. 
+3. The training process is then executed.
 
-Once the training process is over, the signed hashes will be stored inside a cryptographic proof file, and the trained model is then exported, ready to be used.
+4. Once the training process is over, the signed hashes will be stored inside a cryptographic proof file, and the trained model is then exported, ready to be used.
 
 ### How to verify the integrity of an AICert cryptographic proof file
 
