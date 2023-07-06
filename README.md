@@ -143,7 +143,8 @@ In AICert, we use TPMs to:
 
 ## 📇 Contact
 
-Mithril Security - [@MithrilSecurity](https://twitter.com/MithrilSecurity) - contact@mithrilsecurity.io
+
+<a href="https://www.mithrilsecurity.io/contact" style="display: inline-block; background-color: #e5b22b; color: #030e1a; padding: 10px 20px; text-decoration: none;">Contact us</a>
 
 Project Link: [https://github.com/mithril-security/aicert](https://github.com/mithril-security/aicert)
 
