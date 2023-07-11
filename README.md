@@ -194,7 +194,7 @@ Let's dive a bit deeper into the values included in the TPM quote used by AICert
 
 The quote includes is made up of the following hashed values, which are stored in a designated Platform Configuration Register (PCR). We have grouped some values together to make this more digest.
 
-![TPM-quote-values](./assets/PCR-values.png)
+<img src="https://github.com/mithril-security/aicert/raw/readme/assets/PCR-values.png" alt="TPM-quote-values" width="70%">
 
 Each hash value generated is dependent on the previous hash, that is to say that it is a mix of the previous hashed value, plus the value of the new element being added to the quote.
 
@@ -218,7 +218,9 @@ This example shows how crucial a tool like AICert in verifying models and increa
 ## 🤝 Trust Model
 !!!TODO write this section
 
-![TCB](./assets/TCB.png)
+!!!TODO Get Edgar to fix image
+
+<img src="https://github.com/mithril-security/aicert/raw/readme/assets/TCB.png" alt="TCB" width="70%">
 
 ## ⚠️ Limitations
 !!!TODO write this section
