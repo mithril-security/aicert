@@ -40,9 +40,12 @@
   <ol>
     <li><a href="#-about-the-project">About The Project</a></li>
 	  <li><a href="#-why-use-aicert">Why use AICert?</a></li>
-    <li><a href="#-roadmap">Where are we on our roadmap?</a></li>
+    <li><a href="#-roadmap">Roadmap</a></li>
     <li><a href="#-usage">Usage</a></li>
     <li><a href="#-technology-overview">Technology Overview</a></li>
+    <li><a href="#-trust-model">Trust Model</a></li>
+    <li><a href="#-limitations">Technology Overview</a></li>
+
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
@@ -59,10 +62,8 @@ AICert addresses some of the most urgent concerns related to **AI provenance**, 
 + Provide an AI Bill of Material about the data and code used, which makes it harder to poison the model by injecting backdoors in the weights
 + Provide a strong audit trail with irrefutable proof for compliance and transparency
 
-| ⚠️ **WARNING:** AICert is still under development.
+  ⚠️ **WARNING:** AICert is still under development.
     We are currently building a POC of AICert. This initial version will not include the full hardware-based verification features that we will introduce in the full release and **should not be used in production!** 
-|
-| --- |
 
 ## 🎯 Roadmap
 
@@ -197,7 +198,7 @@ The quote includes is made up of the following hashed values, which are stored i
 
 Each hash value generated is dependent on the previous hash, that is to say that it is a mix of the previous hashed value, plus the value of the new element being added to the quote.
 
-#### So how does verification work?
+#### How does verification work?
 
 !!!TODO make this explanation accurate!
 
@@ -214,12 +215,12 @@ This example shows how crucial a tool like AICert in verifying models and increa
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 <!-- CONTACT -->
 
-## Trust model
+## 🤝 Trust Model
 !!!TODO write this section
 
 ![TCB](./assets/TCB.png)
 
-## Limitations
+## ⚠️ Limitations
 !!!TODO write this section
 
 
