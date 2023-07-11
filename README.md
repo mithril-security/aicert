@@ -50,7 +50,7 @@
 
 **AICert** aims to make AI **traceable** and **transparent** by enabling **AI Vendors** to create **cryptographic proofs** relating to their models and the data they have been trained with. **End users** can then use these proofs to **verify they are using authentic models** that have not been tampered with.
 
-We leverage **Trusted Platform Modules (TPMs)** in order to measure models, their training data and the machines they were trained on. We bind these measures into a single cryptographic proof file.
+We leverage **Trusted Platform Modules (TPMs)** in order to measure models, their training data, and the machines they were trained on. We bind these measures into a single cryptographic proof file.
 
 AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI, enabling AI vendors to:
 
@@ -64,9 +64,9 @@ AICert addresses some of the most urgent concerns related to **privacy, security
 
 ## 🔍 Why use AICert?
 
-+ **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
-+ **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards
-+ **Flexible training:** use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image
++ **AI model traceability:** Create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
++ **Non-forgeable proofs:** Leverage TPMs to ensure non-forgeable AI model ID cards
++ **Flexible training:** Use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image
 + **Easy to install and use**
 
 > You can check out [the project code on our GitHub](https://github.com/mithril-security/aicert/).
@@ -91,7 +91,7 @@ This will trigger the following automated workflow:
 
 > Note, the training process might take a while, depending on your input model and the training dataset. 
 
-2. AICert will then create the hashes of the 'software bill of materials'. This includes:
+2. AICert will then create the hashes of the _software bill of materials_. This includes:
 + The user dataset
 + The input model
 + The output model
@@ -122,13 +122,13 @@ AICert is able to verify that each data value is genuine by matching it against 
 
 ### Trusted Platform Modules (TPMs)
 
-+ TPMs are **specialized hardware chips** that exist on most modern laptop or computers that were designed to enhance security.
++ TPMs are **specialized hardware chips** that exist on most modern laptops or computers that were designed to enhance security.
 
-+ When we store data on a machine in RAM or on a hardrive, that memory can be accessed and manipulated by the system's OS. Data stored on TPMs, however, **cannot be manipulated ot tampered with by the OS!**
++ When we store data on a machine in RAM or on a hard drive, that memory can be accessed and manipulated by the system's OS. Data stored on TPMs, however, **cannot be manipulated ot tampered with by the OS!**
 
-+ TPMS have various use cases such as the **secure storage of secrets** and **attesation**.
++ TPMs have various use cases such as the **secure storage of secrets** and **attestation**.
 
-+ A key capability of TPMs is that they can **create measurements of the state of a device**. They can measure information relating to the firmware, bootloader and OS and OS confugration of the device.
++ A key capability of TPMs is that they can **create measurements of the state of a device**. They can measure information relating to the firmware, bootloader, and OS and OS configuration of the device.
 
 
 ### Usage in AICert
