@@ -21,7 +21,7 @@
 </div>
 
  <p align="center">
-    <b>Making AI Traceable and Transparent<br /><br />
+    <b>Making AI Traceable and Transparent</b><br /><br />
    <!-- 
     <a href="https://aicert.mithrilsecurity.io/en/latest"><strong>Explore the docs »</strong></a>
     <br />
