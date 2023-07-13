@@ -94,43 +94,221 @@ AICert addresses some of the most urgent concerns related to **AI provenance**, 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 📜 Usage
+## 📜 Getting started
 
-### How to create an AICert proof file during model training
+### AI Builder POV: Creating an AI model certificate
 
-To start the secure training process, you will need to specify the:
-+ `input-container`: The docker image containing the application for the training of your model 
-+ `dataset-source`: The training dataset
+### Step 1: Preparing dataset and training Dockerfiles
+
+AICert requires AI Builders to provide their training data preparation and code in two separate Dockerfiles in order to get cryptographic measure for these two components individually. This allows end users to know if a difference in hash values relates to the input data or the input model in the case of a difference in their expected values.
+
+In order to separate these two elements, we use Docker's multi-stage builds functionality.
+
+AI Builder's can use the following examples as templates to create their Dockerfiles.
+
+#### Dataset Dockerfile
+
+```Dockerfile
+# define first part of Dockerfile as build stage
+FROM python AS build
+
+# download dependencies
+RUN pip install datasets
+
+# run script to load, prepare and save dataset as .csv file in /home/tmp/datasets
+RUN mkdir -p tmp/datasets
+COPY dataset_script.py tmp/
+RUN python tmp/dataset_script.py
+
+# define second binaries stage
+FROM scratch AS binaries
+
+# waits for build stage to finish before copying files from /home/tmp/datasets to AICert default location: /home/aicert/data
+COPY --from=build /home/tmp/datasets /
+```
+
+AI Builder's can use this Dockerfile as a template by simply adding any additional download dependencies to the Dockerfile and ensuring they provide a data preparing script called `dataset_script.py`.
+
+Let's now take a look at our `dataset_script.py` file:
+
+```python
+from datasets import load_dataset
+
+dataset_name = 'Innermost47/alpaca-fr'
+
+question_column = 'instruction'
+answer_column = 'output'
+number_elements_for_training = 40
+
+# pull dataset
+dataset = load_dataset(dataset_name)
+
+# prep dataset as required
+dataset= dataset['train'].select(range(number_elements_for_training))
+dataset = dataset.select_columns(['instruction', 'output'])
+
+# save dataset for measurement and reuse in training stage
+dataset.to_csv('tmp/datasets/alpaca-fr.csv')
+```
+This script largely follows a typical data preparation workflow. We can load our dataset from the source of our choice and prepare it in any way we wish.
+
+The key step to remember here is we need to make sure we save our prepared dataset in the location stated in the final line of Dockerfile:
+
+`COPY --from=build /home/tmp/datasets /`
+
+Our prepared dataset will then be copied outside of the Docker environment to our destination folder ready to be used in the training stage!
+
+#### Finetuning Dockerfile
+
+In this second Dockerfile, we will copy our dataset from the previous build stage into our finetuning stage, run our training script before exporting our final trained model back into the AICert default data folder.
+
+AICert will organize files in such a way that the datasets exported from the first dataset Docker stages will be available in the Docker environment when we build the training dataset. AI builders can therefore use the `COPY` instruction and name the dataset(s) they exported in the dataset Docker stage, knowing that they will be available upon build.
+
+```Dockerfile
+# define first part of Dockerfile as build stage
+FROM python AS build
+
+# download dependencies required for training script
+RUN pip install datasets \
+    trl==0.4.5 \
+    einops \
+    torch==2.0.1  \
+    transformers==4.26.1 \
+    --extra-index-url https://download.pytorch.org/whl/cpu
+
+# copy our training script
+RUN mkdir -p tmp/model
+COPY train_script.py tmp
+
+# copy dataset exported in previous data preparing Dockerfile
+COPY ./alpaca-fr.csv tmp
+
+# run script to finetune model using dataset
+RUN python tmp/train_script.py
+
+# export trained model to our VM for measurement and use
+FROM scratch AS binaries
+COPY --from=build tmp/model /
+```
+
+AI builders can use this example as a template by replacing the dependencies with those required for their own training script and changing the name of any datasets to be imported to those they exported in their previous Dockerfiles.
+
+```python
+from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import SFTTrainer
+import torch
+
+
+dataset_name = 'Innermost47/alpaca-fr'
+model_id = "tiiuae/falcon-7b"
+question_column = 'instruction'
+answer_column = 'output'
+number_elements_for_training = 40
+
+# Load model directly
+from transformers import AutoModelForCausalLM
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+tokenizer.pad_token = tokenizer.eos_token
+
+# load dataset from location specified in Dockerfile
+dataset = load_dataset('csv', data_files='tmp/alpaca-fr.csv')
+dataset= dataset['train'].select(range(number_elements_for_training))
+
+#format the data
+def formatting_prompts_func(example):
+    text = f"### Question: {example['instruction']}\n ### Answer: {example['output']}"
+    return text
+
+trainer = SFTTrainer(
+    model=model,
+    tokenizer=tokenizer,
+    train_dataset=dataset,
+    dataset_text_field=question_column,
+    max_seq_length=512,
+    formatting_func=formatting_prompts_func,
+    packing=True,
+)
+
+# launch the training
+trainer.train()
+
+# save model to path defined in final Dockerfile command: COPY --from=build tmp/model /
+torch.save(model.state_dict(), '/tmp/model/finetuned.pth')
+```
+
+All the files shown in this example are available in our [docs/resources/falcon-example folder](https://github.com/mithril-security/aicert/blob/readme/docs/resources/falcon-example) on our github.
+
+### Step 2: Launching the traceable training
+
+To launch the traceable training process and get back our AICert proof file, we can use the AICert CLI tool and run the `aicert` command.
+
+We will ned to specify:
++ `input-source`: The dockerfile for the training of your model 
++ `dataset-source`: The dockerfile for the loading and preparing of your dataset(s)
 + `output-model`: File name for your trained model
 + `output-bom`: File name for your cryptographic proof file
 
 ```bash
-aicert --input-container "santacoder_training:v1" --dataset-source "data/train.csv" --output-model "santacoder.pth" --output-bom "proof.json"
+aicert --input-source "./train/Dockerfile" --dataset-source "./data/Dockerfile" --output-model "falcon-finetuned.pth" --output-bom "falcon-finetune-proof.json"
 ```
 
-This will trigger the following automated workflow:
+Once the training process is over, we obtain a signed AI certificate, our `proof.json`, binding the hashes of the weights with the training code and data. 
 
-![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
+It can now be shared with outside parties to prove to them the model comes from the use of the specified training code and data.
 
-1. AICert will create the VM that will be used for the training process. 
+## End user POV: Verifying and inspecting the AI certificate
 
-> Note, the training process might take a while, depending on your input model and the training dataset. 
+The end user can then use our Python SDK to:
 
-2. AICert will then create the hashes of the _software bill of materials_. This includes:
-+ The user dataset
-+ The input model and training data
-+ The output model
-+ The engine used for the training
++ Verifying the AI certificate is legitimate
++ Verifying the software stack of the VM used for training
++ Verifying the input model or dataset used for training
 
-These hashes are signed using the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK). This data is also stored inside the TPM.
+### Verification of the AI certificate and VM software stack
 
-3. The training process is then executed.
+End users can verify the exported proof file is genuine and does contain any unexpected measurements by using the `verify()` method provided by the **AICert Python package** with no arguments.
 
-4. Once the training process is over, the signed hashes will be stored inside a standardized cryptographic proof file, and the trained model is exported, ready to be used.
+```python
+import aicert
+
+# Load the AI certificate
+cert = aicert.load("proof.json")
+
+# Verify the validity of the certificate
+cert.verify()
+```
+
+The `verify()` method checks two things:
++ The authenticity of the certificate's signature, allowing us to know that the proof file was created using a genuine secure hardware.
++ The validity of the hashed values of the whole software stack or boot chain of the VM used to train the dataset.
+
+If the proof file contains a false signature or any false values an error will be raised! False hashed values could signal that the software stack of the VM used for training was misconfigured or even tampered with.
+
+### Verification of the input model, dataset and training code
+
+The `verify()` method also contains optional arguments where we can check the hash values of the dataset, input model and training code against hashes when they are known.
+
+This is useful for open source models, datasets or training codes and allow us to have irrefutable proof that a certain model or dataset were used and not tampered with.
+
+This can also be useful for closed sourced organizations wishing to make internal checks.
+
+```python
+ALPACA_DATASET = "4DE6702C739D8C9ED907F4C031FD0ABC54EE1BF372603A585E139730772CC0B8"
+FALCON_MODEL = "A84571394B5E99FE70AAE39ECE25F844ACBAF83479E27F39A30732E092B19677"
+TRAINING_CODE = "C2FB788C7DEEDBEAA296E424D4C2921B871A4F6CB4CF393C1C1105653AB399B4"
+
+cert.verify(model=FALCON_MODEL, code=TRAINING_CODE, data=ALPACA_DATASET)
+```
+
+If any of these values do not match with the hash values of the input model, dataset or code used for training, an error will be returned to the user.
 
 #### The proof file
 
-The standardized final proof file is a JSON file containing the hash values of the input model, training data, output model as well as information relating to the machine the model was trained on.
+We can equally find these hash values in our standardized final proof file file directly.
+
+This file contains the hash values of the input model, training data, output model as well as the certificate signature and the hash of the low level quote which contains the hashes of the whole boot chain of the VM the model was trained on.
 
 Here is an example of what your final proof file may look like:
 
@@ -139,13 +317,13 @@ Here is an example of what your final proof file may look like:
   "version": "v1",
   "inputs": [
     {
-      "type": "data",
+      "type": "dataset",
       "name": "wikipedia_dataset",
       "download_url": "http://huggingface.com/...",
       "hash": "0fab2467b..."
     },
     {
-      "type": "code",
+      "type": "input model",
       "name": "awesome_algo",
       "download_url": "http://github.com/...",
       "hash": "0fab2467b..."
@@ -157,21 +335,6 @@ Here is an example of what your final proof file may look like:
   "low_level_quote": "0fab2467b...",
 }
 ```
-
-### How to verify the integrity of an AICert cryptographic proof file
-
-You can verify at any time the exported proof file to make sure the proof file is genuine, using the `verify() method` provided by AICert
-
-```python
-import aicert.
-
-# Verify the validity of the data within the proof file
-aicert.verify("proof.json") 
-```
-
-AICert is able to verify that each data value is genuine by matching it against the TPM that was used for the validation. 
-
-⚠️ An error will be raised if the cryptographic proof is invalid or does not match the data available on the TPM!
 
 ## 💡 Technology Overview
 
@@ -194,7 +357,7 @@ Let's dive a bit deeper into the values included in the TPM quote used by AICert
 
 The quote includes is made up of the following hashed values, which are stored in a designated Platform Configuration Register (PCR). We have grouped some values together to make this more digest.
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/assets/PCR-values.png" alt="TPM-quote-values" width="60%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/PCR-values.png" alt="TPM-quote-values" width="60%">
 
 Each hash value generated is dependent on the previous hash, that is to say that it is a mix of the previous hashed value, plus the value of the new element being added to the quote.
 
@@ -220,11 +383,17 @@ This example shows how crucial a tool like AICert in verifying models and increa
 
 !!!TODO Get Edgar to fix image
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/assets/TCB.png" alt="TCB" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/TCB.png" alt="TCB" width="70%">
 
 ## ⚠️ Limitations
-!!!TODO write this section
 
+While we provide traceability and ensure that a given set of weights comes from applying a specific training code on a specific dataset, there are still challenges to solve:
+
++ The training code and data have to be inspected. AICert does not audit the code or input data for threats, such as backdoors injected into a model. It will simply allow us to prove model provenance. It is up to the AI community or model builder to inspect or prove the trustworthiness of the code and data. 
+
++ AICert itself has to be inspected- all the way from the OS we choose to the HTTP server and the app we provide to run the code on the training data. 
+
+We are aware that AICert is not a silver bullet, but we believe that by building this critical piece of infrastructure in the open, we will be able to provide enough scrutiny to ensure AI can be made trustworthy!
 
 ## 📇 Contact
 
