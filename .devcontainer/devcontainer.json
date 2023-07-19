@@ -26,6 +26,7 @@
 			"installJupyterlab": true,
 			"version": "os-provided"
 		},
+		"ghcr.io/devcontainers-contrib/features/poetry:2": {},
 		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
 	}
 
@@ -36,7 +37,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+	"postCreateCommand": "bash .devcontainer/script.sh",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

@@ -11,22 +11,29 @@ curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.s
 sudo apt-get install git-lfs
 git lfs install
 
-```
+<!-- ```
 sudo apt-get update
 sudo apt-get install libtss2-dev
+``` -->
+
 ```
-
-# Dependencies needed for tpm2-pytss 
-sudo apt-get install pkg-config tpm2-tools
-
+sudo apt-get update
+sudo apt-get install -y tpm2-tools
+```
 
 ```
 cd server
-poetry shell
+poetry shell && poetry install
 ```
 
 Run test
 
 ```
 pytest server/main.py
+```
+
+
+```
+# In server/server
+uvicorn main:app
 ```
