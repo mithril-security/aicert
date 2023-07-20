@@ -14,6 +14,7 @@ from cryptography.x509 import load_der_x509_certificate
 req = requests.get("http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt")
 req.raise_for_status()
 ROOT_CERT_DER = req.content
+PCR_FOR_MEASUREMENT = 16
 
 
 class AttestationError(Exception):
@@ -107,65 +108,6 @@ def check_quote(quote, pub_key_pem):
         return yaml.load(tpm2_checkquote.stdout, Loader=yaml.BaseLoader)
 
 
-
-with open('sample_build_response.json') as f:
-   build_response = json.load(f)
-
-def decode_b64_encoding(x):
-    return base64.b64decode(x["base64"])
-
-
-build_response["remote_attestation"]["cert_chain"] = [
-    decode_b64_encoding(cert_b64_encoded)
-    for cert_b64_encoded in build_response["remote_attestation"]["cert_chain"]
-]
-
-ak_cert = verify_ak_cert(cert_chain=build_response["remote_attestation"]["cert_chain"])
-ak_cert_ = load_der_x509_certificate(ak_cert)
-ak_pub_key = ak_cert_.public_key()
-ak_pub_key_pem = ak_pub_key.public_bytes(
-    encoding=serialization.Encoding.PEM,
-    format=serialization.PublicFormat.SubjectPublicKeyInfo,
-)
-
-build_response["remote_attestation"]["quote"] = {
-    k: decode_b64_encoding(v)
-    for k, v in build_response["remote_attestation"]["quote"].items()
-}
-att_document = check_quote(
-    build_response["remote_attestation"]["quote"], ak_pub_key_pem
-)
-# print(att_document)
-
-
-# We should check the PCR to make sure the system has booted properly
-# This is an example ... the real thing will depend on the system.
-assert (
-    att_document["pcrs"]["sha256"]["0"]
-    == "0xD0D725F21BA5D701952888BCBC598E6DCEF9AFF4D1E03BB3606EB75368BAB351"
-)
-assert (
-    att_document["pcrs"]["sha256"]["1"]
-    == "0xFE72566C7F411900F7FA1B512DAC0627A4CAC8C0CB702F38919AD8C415CA47FC"
-)
-assert (
-    att_document["pcrs"]["sha256"]["2"]
-    == "0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
-)
-assert (
-    att_document["pcrs"]["sha256"]["3"]
-    == "0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
-)
-assert (
-    att_document["pcrs"]["sha256"]["4"]
-    == "0x1F0105624AB37B9AF59DA6618A406860E33EF6F42A38DDAF6ABFAB8F23802755"
-)
-assert (
-    att_document["pcrs"]["sha256"]["5"]
-    == "0xD36183A4CE9F539D686160695040237DA50E4AD80600607F84EFF41CF394DCD8"
-)
-
-
 def check_event_log(
     input_event_log,
     pcr_end,
@@ -173,7 +115,7 @@ def check_event_log(
 ):
     # Starting from the expected initial PCR state
     # We replay the event extending the PCR
-    # At the end we get the expected PCR value 
+    # At the end we get the expected PCR value
     initial_pcr = bytes.fromhex(initial_pcr)
     current_pcr = initial_pcr
     for e in input_event_log:
@@ -191,13 +133,75 @@ def check_event_log(
     return event_log
 
 
-# To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
-# But because it is resettable it MUST NOT be used in practice.
-# An unused PCR that cannot be reset (SRTM) MUST be used instead
-# PCR 14 or 15 should do it
-print(
-    check_event_log(
-        build_response["event_log"],
-        att_document["pcrs"]["sha256"]["16"].lower().removeprefix("0x"),
+def decode_b64_encoding(x):
+    return base64.b64decode(x["base64"])
+
+
+def test_check_pass():
+    with open("sample_build_response.json") as f:
+        build_response = json.load(f)
+
+    build_response["remote_attestation"]["cert_chain"] = [
+        decode_b64_encoding(cert_b64_encoded)
+        for cert_b64_encoded in build_response["remote_attestation"]["cert_chain"]
+    ]
+
+    ak_cert = verify_ak_cert(
+        cert_chain=build_response["remote_attestation"]["cert_chain"]
     )
-)
+    ak_cert_ = load_der_x509_certificate(ak_cert)
+    ak_pub_key = ak_cert_.public_key()
+    ak_pub_key_pem = ak_pub_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    build_response["remote_attestation"]["quote"] = {
+        k: decode_b64_encoding(v)
+        for k, v in build_response["remote_attestation"]["quote"].items()
+    }
+    att_document = check_quote(
+        build_response["remote_attestation"]["quote"], ak_pub_key_pem
+    )
+
+    print("attestation document", att_document)
+
+    # We should check the PCR to make sure the system has booted properly
+    # This is an example ... the real thing will depend on the system.
+    assert (
+        att_document["pcrs"]["sha256"]["0"]
+        == "0xD0D725F21BA5D701952888BCBC598E6DCEF9AFF4D1E03BB3606EB75368BAB351"
+    )
+    assert (
+        att_document["pcrs"]["sha256"]["1"]
+        == "0xFE72566C7F411900F7FA1B512DAC0627A4CAC8C0CB702F38919AD8C415CA47FC"
+    )
+    assert (
+        att_document["pcrs"]["sha256"]["2"]
+        == "0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
+    )
+    assert (
+        att_document["pcrs"]["sha256"]["3"]
+        == "0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
+    )
+    assert (
+        att_document["pcrs"]["sha256"]["4"]
+        == "0x1F0105624AB37B9AF59DA6618A406860E33EF6F42A38DDAF6ABFAB8F23802755"
+    )
+    assert (
+        att_document["pcrs"]["sha256"]["5"]
+        == "0xD36183A4CE9F539D686160695040237DA50E4AD80600607F84EFF41CF394DCD8"
+    )
+
+    # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
+    # But because it is resettable it MUST NOT be used in practice.
+    # An unused PCR that cannot be reset (SRTM) MUST be used instead
+    # PCR 14 or 15 should do it
+    print(
+        check_event_log(
+            build_response["event_log"],
+            att_document["pcrs"]["sha256"][str(PCR_FOR_MEASUREMENT)]
+            .lower()
+            .removeprefix("0x"),
+        )
+    )

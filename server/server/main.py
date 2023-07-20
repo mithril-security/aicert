@@ -17,11 +17,14 @@ import docker
 import subprocess
 from pathlib import Path
 from fastapi.encoders import jsonable_encoder
+import yaml
 
 
 app = FastAPI()
 
 docker_client = docker.from_env()
+
+PCR_FOR_MEASUREMENT = 16
 
 
 def sha256_file(file_path) -> str:
@@ -64,17 +67,17 @@ def tpm_read_pcr(pcr_index):
 
     >>> _ = tpm_read_pcr(15)
     """
-    x = subprocess.run(
-        ["tpm2_pcrread", f"sha256:{pcr_index}"], capture_output=True, check=True
-    ).stdout
-    x = x.decode("utf-8")
-    x = x.splitlines()
-    assert len(x) == 2
-    assert "sha256:" == x[0].strip()
-    idx, hash = x[1].split(":")
-    assert idx.strip() == str(pcr_index)
-    hash = hash.strip()
-    return hash[2:].lower()
+    tpm2_pcrread = subprocess.run(
+        ["tpm2_pcrread", f"sha256:{pcr_index}"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    pcrread_output = yaml.load(tpm2_pcrread.stdout, Loader=yaml.BaseLoader)
+    # The result we get from tpm2_pcrread is something in this format '0x31A6F553CC0F9FC156877E35D35CA63AD9514A67C1B231B73665127CD6867631'
+    # This format is not the same as the one output by python hashlib .hexdigest() function
+    # so we transform it so that it is in this format '31a6f553cc0f9fc156877e35d35ca63ad9514a67c1b231b73665127cd6867631'
+    return pcrread_output["sha256"][str(pcr_index)].lower().removeprefix("0x")
 
 
 def get_azure_cert_chain():
@@ -89,8 +92,8 @@ def get_azure_cert_chain():
     root_cert = get_certificate_from_url(
         "http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt"
     )
-
-    cert = tpm_nvread("0x01C101D0")
+    AIK_CERT_INDEX = "0x01C101D0"
+    cert = tpm_nvread(AIK_CERT_INDEX)
     cert_chain = [cert, intermediate_cert, root_cert]
     return cert_chain
 
@@ -103,9 +106,10 @@ def quote():
     """
     Produce a quote attesting the all PCR from the SHA256 PCR bank
 
-    Quote is signed using the key 0x81000003
+    Quote is signed using the key AIK_PUB_INDEX
 
     """
+    AIK_PUB_INDEX = "0x81000003"
     with (
         tempfile.NamedTemporaryFile() as quote_msg_file,
         tempfile.NamedTemporaryFile() as quote_sig_file,
@@ -113,7 +117,7 @@ def quote():
     ):
         # fmt:off
         subprocess.run(["tpm2_quote", "--quiet",
-                        "--key-context", "0x81000003", 
+                        "--key-context", AIK_PUB_INDEX, 
                         "--pcr-list", "sha256:0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", 
                         "--message" , quote_msg_file.name, 
                         "--signature", quote_sig_file.name, 
@@ -151,7 +155,7 @@ class EventLog:
     def append(self, event):
         event_json = json.dumps(event)
         hash_event = hashlib.sha256(event_json.encode()).hexdigest()
-        tpm_extend_pcr(16, hash_event)
+        tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
         self.event_log.append(event_json)
 
     def get(self):
@@ -268,11 +272,6 @@ def build(
         )
 
     event_log.append({"event_type": "build_artifacts", "artifacts": artifacts})
-
-    # TODO: get quote
-    # subprocess.run(
-    #     ["tpm2_quote", "-c", "ak.ctx", "-l", "sha256:0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15", "-q", "1234", "-m", "quote.msg", "-s", "quote.sig", "-o", "quote.pcrs", "-g", "sha256"],
-    # )
 
     res = {
         "event_log": event_log.get(),

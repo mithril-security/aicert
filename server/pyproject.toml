@@ -15,8 +15,10 @@ pytest = "^7.4.0"
 httpx = "^0.24.1"
 blackdoc = "^0.3.8"
 requests = "^2.31.0"
-# pyopenssl is only used by the verifier
+# pyopenssl and pyyaml are only used by the verifier
 pyopenssl = "^23.2.0"
+pyyaml = "^6.0.1"
+cryptography = "^41.0.2"
 
 
 [build-system]
