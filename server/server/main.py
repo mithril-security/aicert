@@ -4,20 +4,18 @@ import base64
 import json
 import tempfile
 
+import subprocess
 import requests
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
-from io import BytesIO
-from typing import Annotated
 import hashlib
-import subprocess
 import docker
-import docker
-import subprocess
 from pathlib import Path
 from fastapi.encoders import jsonable_encoder
 import yaml
+
+from pydantic import BaseModel
 
 
 app = FastAPI()
@@ -33,9 +31,6 @@ def sha256_file(file_path) -> str:
         for chunk in iter(lambda: file.read(4096), b""):
             sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
-
-
-import subprocess
 
 
 def tpm_nvread(offset: str) -> bytes:
@@ -162,7 +157,6 @@ class EventLog:
         return self.event_log
 
 
-from pydantic import BaseModel
 
 
 class BuildRequest(BaseModel):
@@ -279,7 +273,7 @@ def build(
     }
 
     # FastAPI encodes the response as json, but the quote contains raw bytes...
-    # so we have to base64 encode then, this is ugly.
+    # so we have to base64 encode them, this is ugly.
     # Ideally we'd like another serialization format like CBOR or messagepack
     # but FastAPI does not support those :(
     json_res = jsonable_encoder(
