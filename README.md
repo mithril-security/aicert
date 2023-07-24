@@ -38,14 +38,11 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#-about-the-project">About The Project</a></li>
-	  <li><a href="#-why-use-aicert">Why use AICert?</a></li>
-    <li><a href="#-roadmap">Roadmap</a></li>
-    <li><a href="#-usage">Usage</a></li>
+    <li><a href="#-about-the-project">About the project</a></li>
+    <li><a href="#-getting-started">Getting started</a></li>
     <li><a href="#-technology-overview">Technology Overview</a></li>
     <li><a href="#-trust-model">Trust Model</a></li>
     <li><a href="#-limitations">Technology Overview</a></li>
-
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
@@ -69,7 +66,7 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
   ⚠️ **WARNING:** AICert is still under development. Do not use it in production!
   If you want to contribute to this project, do not hesitate to raise an issue.
 
-## 🔍 Features
+### 🔍 Features
 
 + **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
 + **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards
@@ -268,6 +265,8 @@ For example, for our example repository, we would get a proof file back like thi
 
 This contains the SHA1 hash of our GitHub repository commit provided in the AICert config file, which contains our finetuning code and dataset. The end user could then check this against the SHA1 hash value of the official GitHub repository.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Technology overview
 
 TPMs are at the core of AICert, enabling us to cryptographically bind a model’s weights to its training code and data, as well as the software stack of the machine it was trained on.
@@ -316,6 +315,8 @@ After performing training, we hash the outputs and store these hashes in PCR15.
 AICert will then request a “quote”, containing all these measurements, which is signed by a hardware-derived key verified by the Cloud provider.
 
 #### Verification
+
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verication-cropped.png" alt="verification" width="70%">
 
 When end users use the `verify()` method provided in our AICert Python library, AICert will check the values of each PCR in our AICert proof file against known values. This allows us to verify the full software stack used by AICert.
 
