@@ -359,7 +359,7 @@ The end user can then inspect input and output hashes manually.
 
 ### Overview
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/trust-model.png" alt="AICert trust model" width=150%>
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/trust-model.png" alt="AICert trust model">
 
 AICert makes it easy for AI builders to spin a machine with the right hardware/software stack by leveraging Cloud infrastructure (e.g. Azure). We will therefore include the Cloud provider in the Trust Model here. 
 
