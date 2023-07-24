@@ -318,7 +318,7 @@ AICert will then request a “quote”, containing all these measurements, which
 
 #### Verification
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verification-cropped.png" alt="verification" width="40%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verification-cropped.png" alt="verification">
 
 When end users use the `verify()` method provided in our AICert Python library, AICert will check the values of each PCR in our AICert proof file against known values. This allows us to verify the full software stack used by AICert.
 
