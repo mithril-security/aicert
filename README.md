@@ -92,7 +92,7 @@ The end-user can then use our client SDK to verify that the AICert proof file is
 
 **The workflow is as follows:**
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/workflow.png" alt="workflow" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/workflow.png" alt="workflow">
 
 
 **AI builder POV:**
@@ -312,13 +312,13 @@ We then download the project repository and any resources as specified in the AI
 
 After performing training, we hash the outputs and store these hashes in PCR15.
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/PCR-values.png" alt="PCR values" width="50%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/PCR-values.png" alt="PCR values" width="40%">
 
 AICert will then request a “quote”, containing all these measurements, which is signed by a hardware-derived key verified by the Cloud provider.
 
 #### Verification
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verication-cropped.png" alt="verification" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verication-cropped.png" alt="verification" width="40%">
 
 When end users use the `verify()` method provided in our AICert Python library, AICert will check the values of each PCR in our AICert proof file against known values. This allows us to verify the full software stack used by AICert.
 
@@ -326,7 +326,7 @@ However, the hashes in PCR14 and PCR15 are not known values to AICert, so end us
 
 #### AICert Architecture
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/toolkit.png" alt="AICert toolkit" width="50%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/toolkit.png" alt="AICert toolkit" width="40%">
 
 AICert is composed of the following elements:
 + **Base image** containing our selected OS for reproducibility
