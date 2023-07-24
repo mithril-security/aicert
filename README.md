@@ -318,7 +318,7 @@ AICert will then request a “quote”, containing all these measurements, which
 
 #### Verification
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verication-cropped.png" alt="verification" width="40%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/verification-cropped.png" alt="verification" width="40%">
 
 When end users use the `verify()` method provided in our AICert Python library, AICert will check the values of each PCR in our AICert proof file against known values. This allows us to verify the full software stack used by AICert.
 
@@ -359,7 +359,7 @@ The end user can then inspect input and output hashes manually.
 
 ### Overview
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/trust-model.png" alt="AICert trust model">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/trust-model.png" alt="AICert trust model" width=150%>
 
 AICert makes it easy for AI builders to spin a machine with the right hardware/software stack by leveraging Cloud infrastructure (e.g. Azure). We will therefore include the Cloud provider in the Trust Model here. 
 
