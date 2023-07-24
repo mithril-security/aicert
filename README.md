@@ -124,6 +124,7 @@ You will need to place all the files needed to train your model into one reposit
 
 **The GitHub repo file structure for our example is as follows:**
 
+```bash
 AICert-example/
 ├─ inputs/
 │  ├─ alpaca-fr.csv
@@ -131,6 +132,7 @@ AICert-example/
 │  ├─ main.py
 ├─ .gitignore
 ├─ README.md
+```
 
 **The requirements for your script file are as follows:**
 + Your requirements.txt file should be in the root of your GitHub repository.
@@ -294,7 +296,7 @@ Measuring the whole software stack and binding the inputs used in the training p
 
 To see how it works in practice, let’s see how AICert uses TPMs to prove a specific code and data were loaded, and how they were used to produce a specific model.
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/proof-file.png" alt="AICert proof file" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/proof-file.png" alt="AICert proof file">
 
 **Software stack**
 
@@ -310,7 +312,7 @@ We then download the project repository and any resources as specified in the AI
 
 After performing training, we hash the outputs and store these hashes in PCR15.
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/PCR-values.png" alt="PCR values" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/PCR-values.png" alt="PCR values" width="50%">
 
 AICert will then request a “quote”, containing all these measurements, which is signed by a hardware-derived key verified by the Cloud provider.
 
@@ -324,7 +326,7 @@ However, the hashes in PCR14 and PCR15 are not known values to AICert, so end us
 
 #### AICert Architecture
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/toolkit.png" alt="AICert toolkit" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/toolkit.png" alt="AICert toolkit" width="50%">
 
 AICert is composed of the following elements:
 + **Base image** containing our selected OS for reproducibility
@@ -357,7 +359,7 @@ The end user can then inspect input and output hashes manually.
 
 ### Overview
 
-<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/trust-model.png" alt="AICert trust model" width="70%">
+<img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/trust-model.png" alt="AICert trust model">
 
 AICert makes it easy for AI builders to spin a machine with the right hardware/software stack by leveraging Cloud infrastructure (e.g. Azure). We will therefore include the Cloud provider in the Trust Model here. 
 
