@@ -1,6 +1,6 @@
-To get started, we will walk you through the steps needed to configure and launch AICert using an example where we finetune a Falcon 7B model with proof that the model was derived from the pre-trained model, code, and data that we specified.
+To get started, we will walk you through the steps needed to configure and launch AICert using an example where we finetune a [Falcon 7B LLM model](https://huggingface.co/tiiuae/falcon-7b) with proof that the model was derived from the official Falcon-7b pre-trained model, our open-source training code and the dataset that we specify.
 
-The end-user can then use our client SDK to verify that the AICert proof file is genuine and verify the inputs used (pre-trained model, dataset, and code) to produce our model.
+The end-user can then use our **Python client SDK** to verify that the AICert proof file is genuine and check the inputs used (pre-trained model, dataset, and code) to produce our model.
 
 > All the files shown in this example are available [on Github](https://github.com/mithril-security/AICert-example).
 
@@ -8,12 +8,11 @@ The end-user can then use our client SDK to verify that the AICert proof file is
 
 <img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/workflow.png" alt="workflow">
 
-
 **AI builder POV:**
 
 + The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files (alternatively, input files can also be added as **resources** in the config file)
-+ The AI builder modifies the config yaml file, for example, to specify their project repo link
-+ The AI builder launches AICert using the CLI tool
++ The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
++ The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
 
 **Under the hood:**
 + AICert provisions a VM with the required hardware/software stack
@@ -29,12 +28,16 @@ Let’s now take a look at the steps that the AI builder and end users must foll
 
 ### Step 1: Preparing project source repository
 
-You will need to place all the files needed to train your model into one repository, hosted either by GitHub or Hugging Face. This can be a private or public repository.
+We will place all the files needed to train our model into [one GitHub repository](https://github.com/mithril-security/AICert-example). This could be a private or public repository, but in our case is public.
 
 **This repository should include:**
-+ A requirements.txt file with all dependencies needed
-+ A script file (main.py by default) which will be executed by AICert
-+ The inputs required to complete training, such as the dataset or the base model will be fine-tuned. These can alternatively be downloaded from a URL specified in the AICert config file.
++ A **requirements.txt** file with all dependencies needed
++ A script file (**src/main.py** by default) which will be executed by AICert
++ The **inputs** required to complete training, such as the **dataset** or the **base model** to be fine-tuned. These can alternatively be downloaded from a URL specified in the AICert config file.
+
+You can place your input files wherever you like in your GitHub repo. 
+
+The whole repo will be moved to a `/workspace/src` folder within our Docker container at runtime and can be accessed in your `main.py` script within this folder.
 
 **The GitHub repo file structure for our example is as follows:**
 
@@ -46,19 +49,18 @@ AICert-example/
 │  ├─ main.py
 ├─ .gitignore
 ├─ README.md
+├─ requirements.txt
 ```
 
-**The requirements for your script file are as follows:**
-+ Your requirements.txt file should be in the root of your GitHub repository.
-+ When your main.py script is executed at runtime, the contents of your GitHub repo provided as a source in the AICert config file will be accessible in the /workspace/src folder. You should therefore modify any paths in your scripts accordingly.
+**The requirements for our script file are as follows:**
++ We need to make sure the paths to load any inputs in our scripts are relative to the default path `(/workspace/src)` where our source GitHub repo is moved to at runtime.
 ```python
 # load dataset from location specified in AICert config
 dataset = load_dataset('csv', data_files='workspace/src/inputs/alpaca-fr.csv')
 dataset = dataset['train'].select(range(number_elements_for_training))
 ```
 
-+ Any input files provided as resources in the config file, outside of your main GitHub repo, will be accessible in the /workspace/resources folder at runtime.
-+ Your script must save any output artifacts, such as your trained model, to the specified outputs folder, which is /workspace/outputs by default. AICert will then include them in the proof file and return them to you.
++ Our script must save any output artifacts, such as your trained model, to the specified outputs folder, which is /workspace/outputs by default. AICert will then include them in the proof file and return them to you.
 ```python
 # launch the training
 trainer.train()
@@ -67,7 +69,7 @@ trainer.train()
 torch.save(model.state_dict(), '/workspace/outputs/finetuned.pth')
 ```
 
-+ Your script must not download any external input files as we cannot reliably attest resources downloaded in this way. These inputs should be provided in the project repository or as URLs in the AICert config file and loaded from the workspace.
++ Our script must not download any external input files as we cannot reliably attest resources downloaded in this way. These inputs should be provided in the project repository or as URLs in the AICert config file and loaded from the workspace.
 
 AICert records:
 + A SHA1 hash of any GitHub repo commits listed in the AICert config file
@@ -75,39 +77,20 @@ AICert records:
 
 #### Step 2: Modifying the AICert config file
 
-Before launching AICert, the AI builder will need to modify the template AICert config file.
+For our example, we can use the default configuration file by providing a `src/main.py` Python script in our GitHub repository and placing all the files we need for our script within this GitHub repository.
 
-This file allows you to specify:
-
-+ The base Docker image which AICert will use when launching the training
-+ The commands to be executed in this environment
-+ The inputs that will be required for your program (e.g. datasets) and their locations within the workspace
-+ The location of any outputs
-
-In our example, all the files we need to launch our finetuning program are contained within our GitHub repository, so we will add this to our inputs section. Otherwise, we leave all other options with their default values.
-
-```yaml
-kind: python 
-
-pythonVersion: 11
-# available at /workspace/src/
-source: 
-type: git 
-gitRepo: "https://github.com/mithril-security/AICert-example" 	 
-pythonEntryPoint: "src/main.py" 
-```
-
-We will provide full details on all the AICert config file options in a tutorial **coming soon**!
+However, there may be some use cases where users want to customize their AICert configuration for increased flexibility or more complex use cases. We will provide full details of all the AICert config file options and how to implement them in our AICert config file tutorial **coming soon**!
 
 ### Step 3: Launching the traceable training
 
 Finally, to launch the traceable training process and get back our AI certificate, we can use the AICert CLI tool and run the `aicert` command.
 
 **We will need to specify:**
++ `source-repo`: The URL for your source GitHub/HuggingFace repo
 + `output-bom`: File name for your cryptographic proof file
 
 ```bash
-aicert --output-bom "falcon-finetuned-proof.json"
+aicert --source-repo="https://github.com/mithril-security/AICert-example" --output-bom "falcon-finetuned-proof.json"
 ```
 
 Once the training process is over, we obtain a signed AI certificate, our `falcon-finetuned-proof.json`, which binds the hashes of the weights with the training code and dataset used, as well as the software stack of the VM used for training. 
