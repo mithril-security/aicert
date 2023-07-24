@@ -1,6 +1,7 @@
 [Trusted Platform Modules](https://en.wikipedia.org/wiki/Trusted_Platform_Module) (TPMs) are at the core of AICert, enabling us to cryptographically bind a model’s weights to its training code and data, as well as the software stack of the machine it was trained on.
 
 In this section, we will cover:
+
 + How TPMs work
 + How we leverage them in AICert
 + The hardware/software stack we provide with AICert
@@ -56,6 +57,7 @@ However, the hashes in PCR14 and PCR15 are not known values to AICert, so end us
 ![toolkit](../../assets/toolkit.png)
 
 AICert is composed of the following elements:
+
 + **Base image** containing our selected OS for reproducibility
 + **Server** on top that takes inputs specified in the AICert config file, applies the algorithm to the data and uses TPM primitives to create a certificate
 + **CLI tool** to provision the VM with our predefined hardware/software stack, launches AI builder’s program and returns outputs and proof files to them
@@ -74,6 +76,7 @@ When the AI builder launches the `aicert` CLI command. Under the hood, AICert wi
 + Standardize quote details and return AI certificate to the end user
 
 When the end user verifies the certificate, AICert will:
+
 + Verify the certificate comes from a genuine TPM and that the expected software stack has indeed been loaded, all the way up to our server.
 
 The end user can then inspect input and output hashes manually.

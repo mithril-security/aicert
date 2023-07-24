@@ -15,11 +15,13 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 + The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
 
 **Under the hood:**
+
 + AICert provisions a VM with the required hardware/software stack
 + AICert executes the training entry script as specified in the AICert config file
 + AICert returns the scripts outputs, along with a cryptographic proof file with measurements relating to the software stack, the training code and inputs used and the training outputs (e.g. the trained model)
 
 **End-user POV:**
+
 + The end user can verify this certificate and all the elements used to create the trained model (where they have access to the original data)
 
 Let’s now take a look at the steps that the AI builder and end users must follow in more detail.
@@ -31,6 +33,7 @@ Let’s now take a look at the steps that the AI builder and end users must foll
 We will place all the files needed to train our model into [one GitHub repository](https://github.com/mithril-security/AICert-example). This could be a private or public repository, but in our case is public.
 
 **This repository should include:**
+
 + A **requirements.txt** file with all dependencies needed
 + A script file (**src/main.py** by default) which will be executed by AICert
 + The **inputs** required to complete training, such as the **dataset** or the **base model** to be fine-tuned. These can alternatively be downloaded from a URL specified in the AICert config file.
@@ -72,6 +75,7 @@ torch.save(model.state_dict(), '/workspace/outputs/finetuned.pth')
 + Our script must not download any external input files as we cannot reliably attest resources downloaded in this way. These inputs should be provided in the project repository or as URLs in the AICert config file and loaded from the workspace.
 
 AICert records:
+
 + A SHA1 hash of any GitHub repo commits listed in the AICert config file
 + A SHA256 hash of any additional inputs listed in the AICert config file
 
@@ -86,6 +90,7 @@ However, there may be some use cases where users want to customize their AICert 
 Finally, to launch the traceable training process and get back our AI certificate, we can use the AICert CLI tool and run the `aicert` command.
 
 **We will need to specify:**
+
 + `source-repo`: The URL for your source GitHub/HuggingFace repo
 + `output-bom`: File name for your cryptographic proof file
 
@@ -120,6 +125,7 @@ cert.verify()
 ```
 
 The `verify()` method checks two things:
+
 + The authenticity of the certificate's signature, allowing us to know that the proof file was created using genuine secure hardware.
 + The validity of the hashed values of the whole software stack or boot chain of the VM used to train the dataset. This ensures that the certification process is valid and not compromised. It does not attest that the script and data are trustworthy. Those have to be audited independently. However, if the certification process is valid, the AI builder can now be held accountable- if they use, for instance, poisoned data to train the model, this can be verified `a posteriori``. 
 
