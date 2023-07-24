@@ -378,7 +378,7 @@ The Cloud provider who operates the platform is trusted.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Limitations
+## ⚠️ Limitations
 
 While we provide traceability and ensure that a given set of weights comes from applying a specific training code on a specific dataset, there are still challenges to solve:
 
