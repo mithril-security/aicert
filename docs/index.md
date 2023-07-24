@@ -33,6 +33,7 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 + **Azure support**
 
 **Coming soon:**
+
 + **Benchmark linking:** provide cryptographic binding of model weights to specific benchmarks that were run for this specific model
 + **Multi-Cloud support** with AWS and GCP coverage
 + **Single and multi-GPU support**
