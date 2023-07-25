@@ -15,7 +15,7 @@ ________________________________________________________
 
 </br>
 
-<img align="left" src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/TPM.png?raw=true" width="110" alt="TPM"> We leverage **Trusted Platform Modules (TPMs)** in order to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS. 
+<img align="left" src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/TPM.png?raw=true" width="110" alt="TPM"> We leverage **Trusted Platform Modules (TPMs)** to attest the whole stack used for producing the model, from the UEFI, to the code and data, through the OS. 
 
 Measuring the software stack, training code and inputs and binding them to the final weights allows the derivation of certificates that contain **irrefutable proof of model provenance**.
 
