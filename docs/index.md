@@ -5,7 +5,9 @@ ________________________________________________________
 Making AI Traceable and Transparent
 </font></span>
 
-## 🔒 About The Project
+## 📜 What is AICert?
+________________________________________________________
+
 
 **AICert** aims to make AI **traceable** and **transparent** by enabling **AI builders** to create certificates with **cryptographic proofs binding the weights to the training data and code**. AI builders can be foundational model providers or companies that finetune the foundational models to their needs.
 
@@ -21,10 +23,12 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 + Provide an AI Bill of Material about the data and code used, which makes it harder to poison the model by injecting backdoors in the weights
 + Provide a strong audit trail with irrefutable proof for compliance and transparency
 
-  ⚠️ **WARNING:** AICert is still under development. Do not use it in production!
+!!! warning
+  AICert is still under development. Do not use it in production!
   If you want to contribute to this project, do not hesitate to raise an issue.
 
-### 🔍 Features
+## 🔍 Features
+________________________________________________________
 
 + **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
 + **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards
@@ -90,5 +94,6 @@ ___________________________
 + **Our historical project [BlindAI](docs/past-projects/blindai.md) was successfully audited** by Quarkslab. Although both projects differ (BlindAI was meant for the confidential deployment of ONNX models inside Intel SGX enclaves), we want to highlight that we are serious about our security standards and know how to code secure remote attestation. -->
 
 ## 🔒 Who made AICert?
+________________________________________________________
 
 AICert was developed by **Mithril Security**. **Mithril Security** is a startup focused on AI privacy solutions based on **Confidential Computing** technologies. We provide several **open-source tools** for **querying** and **deploying AI solutions** to improve AI provider's security posture and compliance.
