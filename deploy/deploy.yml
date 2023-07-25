@@ -50,7 +50,7 @@
 
     - name: Upload Caddyfile
       copy:
-        src: ../Caddyfile
+        src: Caddyfile
         dest: /etc/caddy/Caddyfile
       become: true
 
@@ -82,7 +82,7 @@
 
     - name: Copy FastAPI systemd config 
       copy:
-        src: ../my-fastapi.service
+        src: my-fastapi.service
         dest: /etc/systemd/system/my-fastapi.service
       become: true
 
