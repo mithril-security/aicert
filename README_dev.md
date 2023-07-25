@@ -98,7 +98,9 @@ commands will detect it and remind you to do so if necessary.
 
 # Create and initialize VM
 ```
-terraform apply
+cd deploy
+terraform plan -out=tfplan -input=false
+terraform apply -input=false tfplan
 
 terraform output -raw tls_private_key > private_key.pem
 chmod 600 private_key.pem
@@ -122,7 +124,7 @@ curl  --cert client.crt --key client.key \
 
 # Finalization (destroy VM)
 ```
-terraform destroy
+terraform destroy -input=false -auto-approve
 ```
 
 <!-- ssh -i private_key.pem azureuser@$(terraform output -raw public_ip_address) -->

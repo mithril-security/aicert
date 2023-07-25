@@ -61,7 +61,9 @@
       become: true
 
     - name: Enable Caddy service
-      shell: systemctl enable --now caddy
+      shell: |
+        systemctl enable --now caddy
+        systemctl reload caddy
       become: true
 
     # Sync a folder
