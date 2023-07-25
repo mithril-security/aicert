@@ -13,11 +13,7 @@ ________________________________________________________
 
 👩‍💻 **End users** are the final consumers of the AI builders’ models. They can then verify these AI certificates to have proof that the model they talk to comes from a specific training set and code, and therefore **alleviates copyright, security and safety issues**.
 
-</br>
-
-<img align="left" src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/TPM.png?raw=true" width="110" alt="TPM"> We leverage **Trusted Platform Modules (TPMs)** to attest the whole stack used for producing the model, from the UEFI, to the code and data, through the OS. 
-
-Measuring the software stack, training code and inputs and binding them to the final weights allows the derivation of certificates that contain **irrefutable proof of model provenance**.
+🔐 We leverage **Trusted Platform Modules (TPMs)** in order to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS. Measuring the whole hardware/software stack and binding the final weights produced (by registering them in the last PCR) allows the derivation of certificates that contain **irrefutable proof of model provenance**.
 
 ### ✅ Use cases
 
@@ -33,7 +29,7 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 
 	If you want to contribute to this project, do not hesitate to raise an issue.
 
-### 🔍 Features
+## 🔍 Features
 ________________________________________________________
 
 + **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code

@@ -16,7 +16,9 @@ AICert is composed of the following elements:
 ## ➡️ Workflow of AICert
 ________________________________________________________
 
-![under-the-hood](../../assets/under-the-hood.png)
+![under-the-hood-dark](../../assets/under-the-hood-dark.png#only-dark)
+![under-the-hood-light](../../assets/under-the-hood-dark.png#only-light)
+
 
 When the AI builder launches the `aicert` CLI command. Under the hood, AICert will:
 
