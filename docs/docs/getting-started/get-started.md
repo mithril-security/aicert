@@ -12,21 +12,27 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 
 <img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/workflow.png" alt="workflow">
 
-??? abstract "AI builder POV 🛠️" 
+**AI builder workflow 🛠️**
 
-	+ The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files (alternatively, input files can also be added as **resources** in the config file)
+	+ The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files
 	+ The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
 	+ The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
 
-??? abstract "Under the hood ⚙️"
+> Alternatively, input files can also be added as **resources** in the config file
+
+**AICert workflow ⚙️**
 
 	+ AICert provisions a VM with the required hardware/software stack
-	+ AICert executes the training entry script as specified in the AICert config file
-	+ AICert returns the scripts outputs, along with a cryptographic proof file with measurements relating to the software stack, the training code and inputs used and the training outputs (e.g. the trained model)
+	+ AICert executes the training script provided
+	+ AICert returns the training outputs and a cryptographic proof file 
+	
+> The proof file contains measurements relating to the software stack, the training code and inputs and the training outputs (e.g. the trained model)
 
-??? abstract "End user POV 👩🏻‍💻"
+**End user workflow 👩🏻‍💻**
 
-	+ The end user can verify this certificate and all the elements used to create the trained model (where they have access to the original data)
+	+ The end user verifies the certificate and the inputs and code used to create the trained model
+
+> End users will only be able to verify the inputs and code where they have access to the original data
 
 Let’s now take a look at the steps that the AI builder and end users must follow in more detail.
 
@@ -35,15 +41,19 @@ ________________________________________________________
 
 ### Step 1: Preparing project source repository
 
-We will place all the files needed to train our model into [one GitHub repository](https://github.com/mithril-security/AICert-example). This could be a private or public repository, but in our case is public.
+We will place all the files needed to train our model into [one GitHub repository](https://github.com/mithril-security/AICert-example)
+
+> This can be a private or public repository
 
 **This repository should include:**
 
 + A **requirements.txt** file with all dependencies needed
 + A script file (**src/main.py** by default) which will be executed by AICert
-+ The **inputs** required to complete training, such as the **dataset** or the **base model** to be fine-tuned. These can alternatively be downloaded from a URL specified in the AICert config file.
++ The **inputs** required to complete training, such as the **dataset** or the **base model** to be fine-tuned
 
-You can place your input files wherever you like in your GitHub repo. 
+> Inputs can alternatively be downloaded from a URL specified in the AICert config file. We consider these as project `resources` and individually hash these files.
+
+> You can place your input files wherever you like in your GitHub repo. 
 
 The whole repo will be moved to a `/workspace/src` folder within our Docker container at runtime and can be accessed in your `main.py` script within this folder.
 
@@ -89,7 +99,7 @@ AICert records:
 
 For our example, we can use the default configuration file by providing a `src/main.py` Python script in our GitHub repository and placing all the files we need for our script within this GitHub repository.
 
-However, there may be some use cases where users want to customize their AICert configuration for increased flexibility or more complex use cases. We will provide full details of all the AICert config file options and how to implement them in our AICert config file tutorial **coming soon**!
+> There may be some use cases where users want to customize their AICert configuration. We will provide full details of all the AICert config file options and how to implement them in our AICert config file tutorial **coming soon**!
 
 ### Step 3: Launching the traceable training
 
@@ -104,7 +114,7 @@ Finally, to launch the traceable training process and get back our AI certificat
 aicert --source-repo="https://github.com/mithril-security/AICert-example" --output-bom "falcon-finetuned-proof.json"
 ```
 
-Once the training process is over, we obtain a signed AI certificate, our `falcon-finetuned-proof.json`, which binds the hashes of the weights with the training code and dataset used, as well as the software stack of the VM used for training. 
+Once the training process is complete, we obtain a signed AI certificate, our `falcon-finetuned-proof.json`, which binds the hashes of the weights with the training code and inputs, as well as the software stack of the VM used for training. 
 
 This proof file can now be shared with outside parties to prove to them the model comes from using the specified training code and data.
 
@@ -133,16 +143,20 @@ cert.verify()
 
 The `verify()` method checks two things:
 
-+ The authenticity of the certificate's signature, allowing us to know that the proof file was created using genuine secure hardware.
-+ The validity of the hashed values of the whole software stack or boot chain of the VM used to train the dataset. This ensures that the certification process is valid and not compromised. It does not attest that the script and data are trustworthy. Those have to be audited independently. However, if the certification process is valid, the AI builder can now be held accountable- if they use, for instance, poisoned data to train the model, this can be verified `a posteriori``. 
++ The authenticity of the certificate's signature
++ The validity of the hashed values of the whole software stack or boot chain of the VM used to train the dataset. This guarantees that the certification process is valid and not compromised.
+
+!!! warning
+
+	The verify() method does not attest that the script and data are trustworthy. They have to be audited independently. However, if the certification process is valid, the AI builder can now be held accountable- if they use, for instance, poisoned data to train the model, this can be verified a posteriori. 
 
 If the proof file contains a false signature or any false values, an error will be raised. False hashed values could signal that the software stack of the VM used for training was misconfigured or even tampered with.
 
-If the `verify()`` method passes, it means that the AI certificate is genuine. However, the dataset and training code have to be verified themselves too.
+If the `verify()`` method does not return any errors, it means that the AI certificate is genuine.
 
 ### Inspecting the proof file
 
-We can also use the proof file to manually check the hashed values of the model's inputs or output hash against known values.
+We can use the proof file to manually check the hashed values of the model's inputs or output hash against known values.
 
 For example, for our example repository, we would get a proof file back like this:
 
@@ -164,4 +178,4 @@ For example, for our example repository, we would get a proof file back like thi
 }
 ```
 
-This contains the SHA1 hash of our GitHub repository commit provided in the AICert config file, which contains our finetuning code and dataset. The end user could then check this against the SHA1 hash value of the official GitHub repository.
+This contains the SHA1 hash of our GitHub repository commit provided in the AICert config file, which contains our finetuning code and dataset. The end user can then check this against the SHA1 hash value of the official GitHub repository.
