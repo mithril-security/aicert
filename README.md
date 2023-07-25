@@ -40,8 +40,6 @@
   <ol>
     <li><a href="#-about-the-project">About the project</a></li>
     <li><a href="#-getting-started">Getting started</a></li>
-    <li><a href="#-technology-overview">Technology Overview</a></li>
-    <li><a href="#-trust-model">Trust Model</a></li>
     <li><a href="#-limitations">Technology Overview</a></li>
     <li><a href="#-contact">Contact</a></li>
   </ol>
@@ -83,11 +81,12 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## 🚀 Getting started
-________________________________________________________
 
 - Check out our [“Getting started guide”](https://aicert.readthedocs.io/en/latest/docs/getting-started/get-started/), which will walk you through an example!
 - [Discover](https://aicert.readthedocs.io/en/latest/docs/getting-started/attestation/) how we bind model weights to training inputs and code
 - [Learn more](https://aicert.readthedocs.io/en/latest/docs/getting-started/tech-overview/) about the AICert architecture & workflow
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## ⚠️ Limitations
 
