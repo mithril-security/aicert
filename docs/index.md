@@ -24,7 +24,9 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 + Provide a strong audit trail with irrefutable proof for compliance and transparency
 
 !!! warning
-  AICert is still under development. Do not use it in production!
+  
+  AICert is still **under development**. Do not use it in production!
+
   If you want to contribute to this project, do not hesitate to raise an issue.
 
 ## 🔍 Features
