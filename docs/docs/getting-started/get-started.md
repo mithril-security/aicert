@@ -1,3 +1,7 @@
+# ☀️ Getting started with AICert!
+________________________________________________________
+
+
 To get started, we will walk you through the steps needed to configure and launch AICert using an example where we finetune a [Falcon 7B LLM model](https://huggingface.co/tiiuae/falcon-7b) with proof that the model was derived from the official Falcon-7b pre-trained model, our open-source training code and the dataset that we specify.
 
 The end-user can then use our **Python client SDK** to verify that the AICert proof file is genuine and check the inputs used (pre-trained model, dataset, and code) to produce our model.
@@ -8,25 +12,26 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 
 <img src="https://github.com/mithril-security/aicert/raw/readme/docs/assets/workflow.png" alt="workflow">
 
-**AI builder POV:**
+??? abstract "AI builder POV 🛠️" 
 
-+ The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files (alternatively, input files can also be added as **resources** in the config file)
-+ The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
-+ The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
+  + The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files (alternatively, input files can also be added as **resources** in the config file)
+  + The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
+  + The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
 
-**Under the hood:**
+??? abstract "Under the hood ⚙️" 
 
-+ AICert provisions a VM with the required hardware/software stack
-+ AICert executes the training entry script as specified in the AICert config file
-+ AICert returns the scripts outputs, along with a cryptographic proof file with measurements relating to the software stack, the training code and inputs used and the training outputs (e.g. the trained model)
+  + AICert provisions a VM with the required hardware/software stack
+  + AICert executes the training entry script as specified in the AICert config file
+  + AICert returns the scripts outputs, along with a cryptographic proof file with measurements relating to the software stack, the training code and inputs used and the training outputs (e.g. the trained model)
 
-**End-user POV:**
+??? abstract "End user POV 👩🏻‍💻" 
 
-+ The end user can verify this certificate and all the elements used to create the trained model (where they have access to the original data)
+  + The end user can verify this certificate and all the elements used to create the trained model (where they have access to the original data)
 
 Let’s now take a look at the steps that the AI builder and end users must follow in more detail.
 
 ### AI builder POV: creating an AI model certificate
+________________________________________________________
 
 ### Step 1: Preparing project source repository
 
@@ -64,6 +69,7 @@ dataset = dataset['train'].select(range(number_elements_for_training))
 ```
 
 + Our script must save any output artifacts, such as your trained model, to the specified outputs folder, which is /workspace/outputs by default. AICert will then include them in the proof file and return them to you.
+
 ```python
 # launch the training
 trainer.train()
@@ -103,6 +109,7 @@ Once the training process is over, we obtain a signed AI certificate, our `falco
 This proof file can now be shared with outside parties to prove to them the model comes from using the specified training code and data.
 
 ## End user POV: Verifying and inspecting the AI certificate
+________________________________________________________
 
 The end user can then use our Python SDK to:
 
