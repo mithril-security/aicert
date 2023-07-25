@@ -43,14 +43,15 @@ ________________________________________________________
 
 ### Overview
 
-![trust-model](../../assets/trust-model.png)
-
 AICert makes it easy for AI builders to spin a machine with the right hardware/software stack by leveraging Cloud infrastructure (e.g. Azure). We will therefore include the Cloud provider in the Trust Model here. 
 
 Therefore, there are three parties present:
+
 + The **AI builder** who is responsible for the training code and data
 + **AICert**, which is responsible for the server-side tooling, including the base OS image, the server to launch the training code and client SDK to verify those elements
 + The **Cloud provider** who is responsible for administrating the machines and providing the virtual TPM
+
+![trust-model](../../assets/trust-model.png)
 
 In the current climate, there is blind trust in the AI builder. If they are compromised, malicious backdoors can be inserted into their models, and there is no way for end users to verify the AI models they provide.
 
