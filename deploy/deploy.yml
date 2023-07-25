@@ -1,0 +1,104 @@
+---
+- hosts: 'my_vm'  
+
+  tasks:
+    - name: Install pkg-config and tpm2-tools
+      apt:
+        name:
+          - pkg-config
+          - tpm2-tools
+        state: present
+        update_cache: true
+      become: true
+
+  
+    - name: Install Docker
+      shell: |
+        sudo apt-get update
+        sudo apt-get install -y ca-certificates curl gnupg 
+        sudo install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor | sudo tee /etc/apt/keyrings/docker.gpg >/dev/null
+        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        echo \
+          "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo groupadd docker
+        sudo usermod -aG docker $USER
+        # newgrp docker
+      args:
+        executable: /bin/bash
+
+    - name: Install Caddy
+      shell: |
+        sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+        sudo apt update
+        sudo apt install caddy
+      args:
+        executable: /bin/bash 
+
+    - name: Install Poetry
+      shell: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo 'export PATH="/home/azureuser/.local/bin:$PATH"' >> ~/.profile
+      args:
+        executable: /bin/bash
+
+    - name: Upload Caddyfile
+      copy:
+        src: ../Caddyfile
+        dest: /etc/caddy/Caddyfile
+      become: true
+
+    - name: Upload client cert to remote server
+      copy:
+        src: client.crt
+        dest: /etc/caddy/client.crt
+      become: true
+
+    - name: Enable Caddy service
+      shell: systemctl enable --now caddy
+      become: true
+
+    # Sync a folder
+    - name: Sync a folder
+      synchronize:
+        src: ../server
+        dest: /home/azureuser
+        mode: push
+        delete: true
+
+
+    - name: Install server dependencies
+      shell: |
+        source ~/.profile && cd server && poetry install
+      args:
+        executable: /bin/bash
+
+
+    - name: Copy FastAPI systemd config 
+      copy:
+        src: ../my-fastapi.service
+        dest: /etc/systemd/system/my-fastapi.service
+      become: true
+
+    - name: Set up FastAPI systemd service 
+      shell: systemctl enable --now my-fastapi
+      become: true
+
+    - name: Wait for file to be downloaded
+      wait_for:
+        path: /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt
+        state: present
+      become: true
+
+    - name: Download file from remote server
+      fetch:
+        src: /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt
+        dest: tls_ca.crt
+        flat: true
+      become: true

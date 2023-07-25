@@ -1,0 +1,14 @@
+[Unit]
+Description=My FastAPI server
+After=network.target
+
+[Service]
+User=azureuser
+Group=azureuser
+WorkingDirectory=/home/azureuser/server/server
+Environment="PATH=/home/azureuser/.local/bin"
+ExecStart=/home/azureuser/.local/bin/poetry run uvicorn main:app --host 127.0.0.1 --port 8080
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
