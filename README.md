@@ -70,7 +70,7 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 
 + **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
 + **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards
-+ **Flexible training:** use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image
++ **Flexible training:** use your preferred tooling for training
 + **No slowdown** induced during training
 + **Azure support**
 
