@@ -49,14 +49,14 @@ Therefore, there are three parties present:
 
 + The **AI builder** who is responsible for the training code and data
 + **AICert**, which is responsible for the server-side tooling, including the base OS image, the server to launch the training code and client SDK to verify those elements
-+ The **Cloud provider** who is responsible for administrating the machines and providing the virtual TPM
++ The **Cloud provider** (who is also the **hardware provider**) who is responsible for administrating the machines and providing the virtual TPM
 
 ![trust-model](../../assets/trust-model.png)
 
-In the current climate, there is blind trust in the AI builder. If they are compromised, malicious backdoors can be inserted into their models, and there is no way for end users to verify the AI models they provide.
+🚩 In the current climate, there is blind trust in the AI builder. If they are compromised, malicious backdoors can be inserted into their models, and there is no way for end users to verify the AI models they provide have not been tampered with.
 
-With AICert, we can remove this need for blind trust in the AI builder, as now there is a cryptographic binding between the weights and the data and code, using the PCR values requested by our server.
+💡 With AICert, we can remove this need for blind trust in the AI builder. There is now a cryptographic binding between the weights and the data and code.
 
-We should however trust that AICert does not contain backdoors, either in the base OS we provide, the HTTP server in charge of running user scripts in containers and registering the PCR values, and the client-side SDK in charge of the verification. AICert is open-source and should be inspected by the community.
+⚠️ We do however need to trust that AICert itself does not contain backdoors, either in the base OS we provide, the server that executes training and generates the proof file, or the client-side SDK in charge of the verification. AICert is open-source and should be inspected by the community.
 
-The Cloud provider who operates the platform is trusted.
+☁️ The Cloud provider who operates the platform is trusted.
