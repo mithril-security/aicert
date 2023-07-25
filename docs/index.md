@@ -48,7 +48,8 @@ ________________________________________________________
 ________________________________________________________
 
 - Check out our [“Getting started guide”](./docs/getting-started/get-started.md), which will walk you through an example!
-- [Discover](./docs/getting-started/tech-overview.md) the technologies we use under the hood!
+- [Discover](./docs/getting-started/attestation.md) how we bind model weights to training inputs and code
+- [Learn more](./docs/getting-started/tech-overview.md) about the AICert architecture & workflow
 
 ## ⚠️ Limitations
 ________________________________________________________
