@@ -126,3 +126,5 @@
 
 /******* max width for large images *******/
 img[alt=PCR-values] { max-width: 350px; }
+img[alt=TPM] { max-width: 350px; }
+

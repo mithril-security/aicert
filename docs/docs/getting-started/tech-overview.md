@@ -4,7 +4,7 @@ ________________________________________________________
 ## 🧰 AICert Architecture
 ________________________________________________________
 
-![toolkit](../../assets/toolkit.png)
+![toolkit](https://github.com/mithril-security/aicert/blob/readme/docs/assets/toolkit.png?raw=true)
 
 AICert is composed of the following elements:
 
@@ -15,6 +15,8 @@ AICert is composed of the following elements:
 
 ## ➡️ Workflow of AICert
 ________________________________________________________
+
+![under-the-hood](../../assets/under-the-hood.png)
 
 When the AI builder launches the `aicert` CLI command. Under the hood, AICert will:
 

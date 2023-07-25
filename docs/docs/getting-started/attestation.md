@@ -12,6 +12,7 @@ In this section, we will cover:
 ## 🔐 Trusted Platform Modules (TPMs)
 ________________________________________________________
 
+![TPM](../../assets/TPM.png)
 
 ### Overview
 
