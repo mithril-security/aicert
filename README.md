@@ -97,7 +97,7 @@ While we provide traceability and ensure that a given set of weights comes from 
 
 We are well aware that AICert is not a silver bullet, as to have a fully trustworthy process, it requires scrutiny of both our code and the code and data of the AI builder.
 
-However, by combining both, one can have a solid foundation for the AI supply chain.
+However, by combining both, we can have a solid foundation for the AI supply chain.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
