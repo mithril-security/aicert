@@ -15,23 +15,23 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 
 **AI builder workflow 🛠️**
 
-	+ The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files
-	+ The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
-	+ The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
++ The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files
++ The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
++ The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
 
 > Alternatively, input files can also be added as **resources** in the config file
 
 **AICert workflow ⚙️**
 
-	+ AICert provisions a VM with the required hardware/software stack
-	+ AICert executes the training script provided
-	+ AICert returns the training outputs and a cryptographic proof file 
++ AICert provisions a VM with the required hardware/software stack
++ AICert executes the training script provided
++ AICert returns the training outputs and a cryptographic proof file 
 	
 > The proof file contains measurements relating to the software stack, the training code and inputs and the training outputs (e.g. the trained model)
 
 **End user workflow 👩🏻‍💻**
 
-	+ The end user verifies the certificate and the inputs and code used to create the trained model
++ The end user verifies the certificate and the inputs and code used to create the trained model
 
 > End users will only be able to verify the inputs and code where they have access to the original data
 
