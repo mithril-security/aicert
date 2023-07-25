@@ -14,19 +14,19 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 
 ??? abstract "AI builder POV 🛠️" 
 
-  + The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files (alternatively, input files can also be added as **resources** in the config file)
-  + The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
-  + The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
+	+ The AI builder prepares **a GitHub or HuggingFace source repository** containing their training script and input files (alternatively, input files can also be added as **resources** in the config file)
+	+ The AI builder can optionally modify the config yaml file, for example, to add additional resources outside of their github source repository
+	+ The AI builder launches AICert using the CLI tool, specifying their source folder repo and the file name of their proof file
 
-??? abstract "Under the hood ⚙️" 
+??? abstract "Under the hood ⚙️"
 
-  + AICert provisions a VM with the required hardware/software stack
-  + AICert executes the training entry script as specified in the AICert config file
-  + AICert returns the scripts outputs, along with a cryptographic proof file with measurements relating to the software stack, the training code and inputs used and the training outputs (e.g. the trained model)
+	+ AICert provisions a VM with the required hardware/software stack
+	+ AICert executes the training entry script as specified in the AICert config file
+	+ AICert returns the scripts outputs, along with a cryptographic proof file with measurements relating to the software stack, the training code and inputs used and the training outputs (e.g. the trained model)
 
-??? abstract "End user POV 👩🏻‍💻" 
+??? abstract "End user POV 👩🏻‍💻"
 
-  + The end user can verify this certificate and all the elements used to create the trained model (where they have access to the original data)
+	+ The end user can verify this certificate and all the elements used to create the trained model (where they have access to the original data)
 
 Let’s now take a look at the steps that the AI builder and end users must follow in more detail.
 
