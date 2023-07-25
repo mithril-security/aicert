@@ -51,11 +51,11 @@
 
 👩‍💻 **End users** are the final consumers of the AI builders’ models. They can then verify these AI certificates to have proof that the model they talk to comes from a specific training set and code, and therefore **alleviates copyright, security and safety issues**.
 
-<img src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/proof-file.png?raw=true" width="350" alt="Certificate">
+<img src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/proof-file.png?raw=true" width="700" alt="Certificate">
 
 🔐 We leverage **Trusted Platform Modules (TPMs)** in order to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS. Measuring the whole hardware/software stack and binding the final weights produced (by registering them in the last PCR) allows the derivation of certificates that contain **irrefutable proof of model provenance**.
 
-<img src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/TPM.png?raw=true" width="350" alt="TPM">
+<img src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/TPM.png?raw=true" width="250" alt="TPM">
 
 
 ### Use cases
