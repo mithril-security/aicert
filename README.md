@@ -38,109 +38,71 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#-about-the-project">About The Project</a></li>
-	<li><a href="#-why-use-aicert">Why use AICert?</a></li>
-    <li><a href="#-usage">Usage</a></li>
-    <li><a href="#-technology-overview">Technology Overview</a></li>
+    <li><a href="#-about-the-project">About the project</a></li>
+    <li><a href="#-getting-started">Getting started</a></li>
+    <li><a href="#-limitations">Limitations</a></li>
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
 
 ## 🔒 About The Project
 
-**AICert** aims to make AI **traceable** and **transparent** by enabling **AI Vendors** to create **cryptographic proofs** relating to their models and the data they have been trained with. **End users** can then use these proofs to **verify they are using authentic models** that have not been tampered with.
+🛠️ **AICert** aims to make AI **traceable** and **transparent** by enabling **AI builders** to create certificates with **cryptographic proofs binding the weights to the training data and code**. AI builders can be foundational model providers or companies that finetune the foundational models to their needs.
 
-We leverage **Trusted Platform Modules (TPMs)** in order to measure models, their training data, and the machines they were trained on. We bind these measures into a single cryptographic proof file.
+👩‍💻 **End users** are the final consumers of the AI builders’ models. They can then verify these AI certificates to have proof that the model they talk to comes from a specific training set and code, and therefore **alleviates copyright, security and safety issues**.
 
-AICert addresses some of the most urgent concerns related to **privacy, security, and compliance** surrounding AI, enabling AI vendors to:
+</br>
 
-+ Prove AI model provenance
-+ Keep a traceable record of the model training process
-+ Safeguard against the threat of model poisoning
-+ Achieve compliance and improve security posture
+<img align="left" src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/TPM.png?raw=true" width="110" alt="TPM"> We leverage **Trusted Platform Modules (TPMs)** in order to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS. 
 
-| ⚠️ **WARNING:** AICert is still under development. **Do not use in production!** |
-| --- |
+Measuring the software stack, training code and inputs and binding them to the final weights allows the derivation of certificates that contain **irrefutable proof of model provenance**.
 
-## 🔍 Why use AICert?
 
-+ **AI model traceability:** Create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
-+ **Non-forgeable proofs:** Leverage TPMs to ensure non-forgeable AI model ID cards
-+ **Flexible training:** Use your preferred tooling for training- the only requirement is that it can be packaged into a Docker image
-+ **Easy to install and use**
+### ✅ Use cases
 
-> You can check out [the project code on our GitHub](https://github.com/mithril-security/aicert/).
+AICert addresses some of the most urgent concerns related to **AI provenance**. It allows AI builders to:
+
++ Prove their AI model was not trained on copyrighted, biased or non-consensual PII data
++ Provide an AI Bill of Material about the data and code used, which makes it harder to poison the model by injecting backdoors in the weights
++ Provide a strong audit trail with irrefutable proof for compliance and transparency
+
+  ⚠️ **WARNING:** AICert is still under development. Do not use it in production!
+  If you want to contribute to this project, do not hesitate to raise an issue.
+
+### 🔍 Features
+
++ **AI model traceability:** create AI model ID cards that provide cryptographic proof binding model weights to a specific training set and code
++ **Non-forgeable proofs:** leverage TPMs to ensure non-forgeable AI model ID cards
++ **Flexible training:** use your preferred tooling for training
++ **No slowdown** induced during training
++ **Azure support**
+
+### 🎯 Coming soon
++ **Benchmark linking:** provide cryptographic binding of model weights to specific benchmarks that were run for this specific model
++ **Multi-Cloud support** with AWS and GCP coverage
++ **Single and multi-GPU support**
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🚀 Getting started
+
+- Check out our [“Getting started guide”](https://aicert.readthedocs.io/en/latest/docs/getting-started/get-started/), which will walk you through an example!
+- [Discover](https://aicert.readthedocs.io/en/latest/docs/getting-started/attestation/) how we bind model weights to training inputs and code
+- [Learn more](https://aicert.readthedocs.io/en/latest/docs/getting-started/tech-overview/) about the AICert architecture & workflow
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 📜 Usage
+## ⚠️ Limitations
 
-### How to create an AICert proof file during model training
+While we provide traceability and ensure that a given set of weights comes from applying a specific training code on a specific dataset, there are still challenges to solve:
 
-To start the secure training process, you need to provide the docker image you intend to use for the training of your model and the training dataset. You can also specify the names you wish your output model and cryptographic proof file to have.
++ The training code and data have to be inspected. AICert does not audit the code or input data for threats, such as backdoors injected into a model by the code or poisonous data. It will simply allow us to prove model provenance. It is up to the AI community or end-user to inspect or prove the trustworthiness of the code and data. 
++ AICert itself has to be inspected, all the way from the OS we choose to the HTTP server and the app we provide to run the code on the training data.
 
-```bash
-aicert --input-container "santacoder_training:v1" --dataset-source "data/train.csv" --output-model "santacoder.pth" --output-bom "proof.json"
-```
+We are well aware that AICert is not a silver bullet, as to have a fully trustworthy process, it requires scrutiny of both our code and the code and data of the AI builder.
 
-This will trigger the following automated workflow:
-
-![AICert workflow](https://github.com/mithril-security/aicert/blob/readme/assets/aicert-workflow.png?raw=true)
-
-1. AICert will then create a VM that will be used for the training process. 
-
-> Note, the training process might take a while, depending on your input model and the training dataset. 
-
-2. AICert will then create the hashes of the _software bill of materials_. This includes:
-+ The user dataset
-+ The input model
-+ The output model
-+ The engine used for the training
-
-These hashes are signed using the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK). This data is also stored inside the TPM.
-
-3. The training process is then executed.
-
-4. Once the training process is over, the signed hashes will be stored inside a cryptographic proof file, and the trained model is then exported, ready to be used.
-
-### How to verify the integrity of an AICert cryptographic proof file
-
-You can verify at any time the exported proof file to make sure the proof file is genuine, using the `verify() method` provided by AICert
-
-```python
-import aicert.
-
-# Verify the validity of the data within the proof file
-aicert.verify("proof.json") 
-```
-
-AICert is able to verify that each data value is genuine by matching it against the TPM that was used for the validation. 
-
-⚠️ An error will be raised if the cryptographic proof is invalid or does not match the data available on the TPM!
-
-## 💡 Technology Overview
-
-### Trusted Platform Modules (TPMs)
-
-+ TPMs are **specialized hardware chips** that exist on most modern laptops or computers that were designed to enhance security.
-
-+ When we store data on a machine in RAM or on a hard drive, that memory can be accessed and manipulated by the system's OS. Data stored on TPMs, however, **cannot be manipulated ot tampered with by the OS!**
-
-+ TPMs have various use cases such as the **secure storage of secrets** and **attestation**.
-
-+ A key capability of TPMs is that they can **create measurements of the state of a device**. They can measure information relating to the firmware, bootloader, and OS and OS configuration of the device.
-
-
-### Usage in AICert
-
-In AICert, we use TPMs to:
-
-- **Measure the script used to create a model and dataset** used to train the model and use this information to create a **robust AI model ID card**.
-- **Sign a model** with an **attestation key (AK)** derived from the unique **forge-proof TPM Endorsement Key (EK)**. 
-- **Measure the identity of the machine** a model was created on.
+However, by combining both, we can have a solid foundation for the AI supply chain.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-<!-- CONTACT -->
 
 ## 📇 Contact
 
