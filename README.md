@@ -58,7 +58,7 @@
 Measuring the software stack, training code and inputs and binding them to the final weights allows the derivation of certificates that contain **irrefutable proof of model provenance**.
 
 
-### Use cases
+### ✅ Use cases
 
 AICert addresses some of the most urgent concerns related to **AI provenance**. It allows AI builders to:
 
