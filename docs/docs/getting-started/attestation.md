@@ -12,11 +12,11 @@ In this section, we will cover:
 ## 🔐 Trusted Platform Modules (TPMs)
 ________________________________________________________
 
-![TPM](../../assets/TPM.png)
-
 ### Overview
 
-TPMs can be used to ensure the integrity of a whole software supply chain. Such devices have the property of being able to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS.
+![TPM](../../assets/TPM.png)
+
+TPMs are secure hardware components that can be used to ensure the integrity of a whole software supply chain. Such devices have the property of being able to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS.
 
 The TPM PCRs (Platform Configuration Registers) are a set of registers within the TPM that store measurements of system configuration and integrity. They can be considered a log of the system state, capturing the integrity of various components during the boot process and other critical stages. The PCRs are typically used to attest to the integrity of a system or to verify that the system has not been tampered with.
 
