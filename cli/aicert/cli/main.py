@@ -1,10 +1,7 @@
-import inquirer
-import os
 import typer
 from typing import Annotated, Optional
 
 from .logging import log
-from .context import Context
 
 app = typer.Typer(rich_markup_mode="rich")
 

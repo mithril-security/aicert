@@ -1,9 +1,13 @@
 [tool.poetry]
-name = "server"
+name = "aicert-server"
 version = "0.1.0"
 description = ""
-authors = ["Corentin Lauverjat <corentin.lauverjat@mithrilsecurity.io>"]
+authors = [
+    "Corentin Lauverjat <corentin.lauverjat@mithrilsecurity.io>",
+    "Lucas Bourtoule <lucas.bourtoule@mithrilsecurity.io>",
+]
 readme = "README.md"
+packages = [{include = "aicert_server"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -15,10 +19,8 @@ pytest = "^7.4.0"
 httpx = "^0.24.1"
 blackdoc = "^0.3.8"
 requests = "^2.31.0"
-# pyopenssl and pyyaml are only used by the verifier
-pyopenssl = "^23.2.0"
-pyyaml = "^6.0.1"
 cryptography = "^41.0.2"
+aicert-common = { path = "../common" }
 
 
 [build-system]

@@ -1,12 +1,3 @@
-__all__ = []
+__all__ = ["cli"]
 
-from .verifier.verifier import (
-    verify,
-    pprint,
-)
-
-try:
-    from . import cli
-    __all__ += ["cli"]
-except ImportError:
-    pass
+from . import cli
