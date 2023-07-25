@@ -30,7 +30,7 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 
 Let’s now take a look at the steps that the AI builder and end users must follow in more detail.
 
-### AI builder POV: creating an AI model certificate
+## AI builder POV: creating an AI model certificate
 ________________________________________________________
 
 ### Step 1: Preparing project source repository
@@ -85,7 +85,7 @@ AICert records:
 + A SHA1 hash of any GitHub repo commits listed in the AICert config file
 + A SHA256 hash of any additional inputs listed in the AICert config file
 
-#### Step 2: Modifying the AICert config file
+### Step 2: Modifying the AICert config file
 
 For our example, we can use the default configuration file by providing a `src/main.py` Python script in our GitHub repository and placing all the files we need for our script within this GitHub repository.
 
@@ -140,7 +140,7 @@ If the proof file contains a false signature or any false values, an error will 
 
 If the `verify()`` method passes, it means that the AI certificate is genuine. However, the dataset and training code have to be verified themselves too.
 
-#### The proof file
+### Inspecting the proof file
 
 We can also use the proof file to manually check the hashed values of the model's inputs or output hash against known values.
 
