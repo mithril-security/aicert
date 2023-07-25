@@ -14,15 +14,17 @@ ________________________________________________________
 
 ### Overview
 
-![TPM](../../assets/TPM.png)
+TPMs are secure hardware components that can be used to ensure the integrity of a whole software supply chain. They are able to attest the whole software stack of a machine, from the UEFI to the OS. 
 
-TPMs are secure hardware components that can be used to ensure the integrity of a whole software supply chain. Such devices have the property of being able to attest the whole stack used for producing the model, from the UEFI, all the way to the code and data, through the OS.
+They can also attest additional customizable items- in our case, we also attest AI model training code, inputs and outputs.
 
-The TPM PCRs (Platform Configuration Registers) are a set of registers within the TPM that store measurements of system configuration and integrity. They can be considered a log of the system state, capturing the integrity of various components during the boot process and other critical stages. The PCRs are typically used to attest to the integrity of a system or to verify that the system has not been tampered with.
+#### How does it work?
 
-When a system boots, various measurements are taken, such as hashes of firmware, boot loaders, and critical system files. These measurements are then stored in the TPM PCRs. The values stored in the PCRs can then be compared against known values.
+When a TPM-enabled system boots, various measurements are taken, such as hashes of firmware, boot loaders, and critical system files. These measurements are then stored in the TPM's PCRs (Platform Configuration Registers), a set of registers within the TPM. PCRs can be considered a log of the system state, capturing the integrity of various components during the boot process and other critical stages. 
 
-We can request a signed quote from the TPM which contains these PCR values and is signed by the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK), and thus cannot be falsified by a third party.
+We can then check the values stored in the PCRs against known values, allowing us to attest that the software stack has not changed from the expected values.
+
+To do this, we can request a signed quote from the TPM which contains these PCR values and is signed by the TPM's Attestation Key (AK), which is derived from a tamper-proof TPM Endorsement Key (EK), and thus cannot be falsified by a third party.
 
 Measuring the whole software stack and binding the inputs used in the training process and the final weights produced (by registering them to the last two PCRs) allows the derivation of certificates that contain irrefutable proof of model provenance. 
 

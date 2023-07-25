@@ -4,7 +4,8 @@ ________________________________________________________
 ## 🧰 AICert Architecture
 ________________________________________________________
 
-![toolkit](https://github.com/mithril-security/aicert/blob/readme/docs/assets/toolkit.png?raw=true)
+![toolkit-dark](../../assets/toolkit-dark.png#only-dark)
+![toolkit-light](../../assets/toolkit.png#only-light)
 
 AICert is composed of the following elements:
 
@@ -51,7 +52,8 @@ Therefore, there are three parties present:
 + **AICert**, which is responsible for the server-side tooling, including the base OS image, the server to launch the training code and client SDK to verify those elements
 + The **Cloud provider** (who is also the **hardware provider**) who is responsible for administrating the machines and providing the virtual TPM
 
-![trust-model](../../assets/trust-model.png)
+![trust-model-dark](../../assets/trust-model-dark.png#only-dark)
+![trust-model-light](../../assets/trust-model.png#only-light)
 
 🚩 In the current climate, there is blind trust in the AI builder. If they are compromised, malicious backdoors can be inserted into their models, and there is no way for end users to verify the AI models they provide have not been tampered with.
 
