@@ -40,7 +40,7 @@
   <ol>
     <li><a href="#-about-the-project">About the project</a></li>
     <li><a href="#-getting-started">Getting started</a></li>
-    <li><a href="#-limitations">Technology Overview</a></li>
+    <li><a href="#-limitations">Limitations</a></li>
     <li><a href="#-contact">Contact</a></li>
   </ol>
 </details>
