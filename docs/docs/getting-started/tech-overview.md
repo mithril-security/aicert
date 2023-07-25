@@ -10,10 +10,11 @@ ________________________________________________________
 
 AICert is composed of the following elements:
 
-+ **Base image** containing our selected OS for reproducibility
-+ **Server** on top that takes inputs specified in the AICert config file, applies the algorithm to the data and uses TPM primitives to create a certificate
-+ **CLI tool** to provision the VM with our predefined hardware/software stack, launches AI builder’s program and returns outputs and proof files to them
++ **Base image**  containing our selected OS for reproducibility
++ **The Server**, which is responsible for running training and creating our cryptographic proof file
++ **CLI tool**, which enables AI builders to supply model inputs, launch training and receive proof file
 + **Client-side Python SDK** to verify and inspect AI certificates
+
 
 ## ➡️ Workflow of AICert
 ________________________________________________________
