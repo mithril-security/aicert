@@ -76,7 +76,7 @@ def build(build_request: BuildRequest) -> Response:
     res = event_log.attest()
 
     # FastAPI encodes the response as json, but the quote contains raw bytes...
-    # so we have to base64 encode then, this is ugly.
+    # so we have to base64 encode them, this is ugly.
     # Ideally we'd like another serialization format like CBOR or messagepack
     # but FastAPI does not support those :(
     json_res = jsonable_encoder(
