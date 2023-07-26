@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -7,12 +8,16 @@ from typing import Annotated, Optional
 
 import yaml
 
+from aicert.cli.verify import PCR_FOR_MEASUREMENT, check_event_log, check_quote, decode_b64_encoding, verify_ak_cert
+
 from .client import Client
 from .requests_adapter import ForcedIPHTTPSAdapter
 from .logging import log
 import importlib
 import importlib.resources
 from pathlib import Path
+from cryptography.hazmat.primitives import serialization
+from cryptography.x509 import load_der_x509_certificate
 
 app = typer.Typer(rich_markup_mode="rich")
 
@@ -103,9 +108,90 @@ def build():
 
 
 @app.command()
-def verify():
+def verify(path: str):
     """Launch verification process"""
-    raise NotImplementedError
+    # path is the path to the proof file
+    # Path(path).read_text()
+    path = "/workspaces/aicert_dev/server/aicert_server/sample_build_response.json"
+    with open(path, "r") as f:
+        build_response = json.load(f)
+
+    build_response["remote_attestation"]["cert_chain"] = [
+        decode_b64_encoding(cert_b64_encoded)
+        for cert_b64_encoded in build_response["remote_attestation"]["cert_chain"]
+    ]
+
+    ak_cert = verify_ak_cert(
+        cert_chain=build_response["remote_attestation"]["cert_chain"]
+    )
+
+    typer.secho(f"✅ Valid certificate chain", fg=typer.colors.GREEN)
+
+    ak_cert_ = load_der_x509_certificate(ak_cert)
+    ak_pub_key = ak_cert_.public_key()
+    ak_pub_key_pem = ak_pub_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    build_response["remote_attestation"]["quote"] = {
+        k: decode_b64_encoding(v)
+        for k, v in build_response["remote_attestation"]["quote"].items()
+    }
+    att_document = check_quote(
+        build_response["remote_attestation"]["quote"], ak_pub_key_pem
+    )
+
+    typer.secho(f"✅ Valid quote", fg=typer.colors.GREEN)
+
+
+    log.info("attestation document", att_document)
+
+    # We should check the PCR to make sure the system has booted properly
+    # This is an example ... the real thing will depend on the system.
+    assert (
+        att_document["pcrs"]["sha256"][0]
+        == "d0d725f21ba5d701952888bcbc598e6dcef9aff4d1e03bb3606eb75368bab351"
+    )
+    assert (
+        att_document["pcrs"]["sha256"][1]
+        == "fe72566c7f411900f7fa1b512dac0627a4cac8c0cb702f38919ad8c415ca47fc"
+    )
+    assert (
+        att_document["pcrs"]["sha256"][2]
+        == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
+    )
+    assert (
+        att_document["pcrs"]["sha256"][3]
+        == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
+    )
+    assert (
+        att_document["pcrs"]["sha256"][4]
+        == "1f0105624ab37b9af59da6618a406860e33ef6f42a38ddaf6abfab8f23802755"
+    )
+    assert (
+        att_document["pcrs"]["sha256"][5]
+        == "d36183a4ce9f539d686160695040237da50e4ad80600607f84eff41cf394dcd8"
+    )
+    
+    typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
+
+
+    # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
+    # But because it is resettable it MUST NOT be used in practice.
+    # An unused PCR that cannot be reset (SRTM) MUST be used instead
+    # PCR 14 or 15 should do it
+    event_log = check_event_log(
+            build_response["event_log"],
+            att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
+        )
+    
+    typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
+
+    print(yaml.safe_dump(event_log))
+
+    # print(build_response)
+    # raise NotImplementedError
 
 # @app.command()
 # def certify(

@@ -6,6 +6,8 @@ import tempfile
 from OpenSSL import crypto
 import requests
 import yaml
+from .logging import log
+
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
@@ -126,8 +128,8 @@ def check_event_log(
         hash_event = hashlib.sha256(e.encode()).digest()
         current_pcr = hashlib.sha256(current_pcr + hash_event).digest()
 
-    print("PCR in quote :", pcr_end)
-    print("Expected PCR based on event log and initial PCR", current_pcr.hex())
+    log.info(f"PCR in quote : {pcr_end}")
+    log.info(f"Expected PCR based on event log and initial PCR {current_pcr.hex()}")
     # Both PCR MUST match, else something sketchy is going on!
     assert pcr_end == current_pcr.hex()
 
@@ -153,6 +155,8 @@ def test_check_pass():
     ak_cert = verify_ak_cert(
         cert_chain=build_response["remote_attestation"]["cert_chain"]
     )
+
+    
     ak_cert_ = load_der_x509_certificate(ak_cert)
     ak_pub_key = ak_cert_.public_key()
     ak_pub_key_pem = ak_pub_key.public_bytes(
