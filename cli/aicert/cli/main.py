@@ -148,7 +148,7 @@ def verify(path: str):
     typer.secho(f"✅ Valid quote", fg=typer.colors.GREEN)
 
 
-    log.info("attestation document", att_document)
+    log.info(f"Attestation Document > PCRs :  \n{yaml.safe_dump(att_document['pcrs']['sha256'])}")
 
     # We should check the PCR to make sure the system has booted properly
     # This is an example ... the real thing will depend on the system.
