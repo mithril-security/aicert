@@ -109,10 +109,13 @@ def build():
 
 @app.command()
 def verify(path: str):
-    """Launch verification process"""
+    """Launch verification process
+    
+    Example:
+    aicert verify "/workspaces/aicert_dev/server/aicert_server/sample_build_response.json"
+    """
     # path is the path to the proof file
     # Path(path).read_text()
-    path = "/workspaces/aicert_dev/server/aicert_server/sample_build_response.json"
     with open(path, "r") as f:
         build_response = json.load(f)
 
