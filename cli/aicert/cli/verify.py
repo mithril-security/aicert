@@ -7,7 +7,6 @@ from OpenSSL import crypto
 import requests
 import yaml
 
-from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 
@@ -105,7 +104,12 @@ def check_quote(quote, pub_key_pem):
             capture_output=True,
             text=True,
         )
-        return yaml.load(tpm2_checkquote.stdout, Loader=yaml.BaseLoader)
+        att_document = yaml.load(tpm2_checkquote.stdout, Loader=yaml.BaseLoader)
+        att_document["pcrs"]["sha256"] = {
+            int(k): v.lower().removeprefix("0x")
+            for k, v in att_document["pcrs"]["sha256"].items()
+        }
+        return att_document
 
 
 def check_event_log(
@@ -169,28 +173,28 @@ def test_check_pass():
     # We should check the PCR to make sure the system has booted properly
     # This is an example ... the real thing will depend on the system.
     assert (
-        att_document["pcrs"]["sha256"]["0"]
-        == "0xD0D725F21BA5D701952888BCBC598E6DCEF9AFF4D1E03BB3606EB75368BAB351"
+        att_document["pcrs"]["sha256"][0]
+        == "d0d725f21ba5d701952888bcbc598e6dcef9aff4d1e03bb3606eb75368bab351"
     )
     assert (
-        att_document["pcrs"]["sha256"]["1"]
-        == "0xFE72566C7F411900F7FA1B512DAC0627A4CAC8C0CB702F38919AD8C415CA47FC"
+        att_document["pcrs"]["sha256"][1]
+        == "fe72566c7f411900f7fa1b512dac0627a4cac8c0cb702f38919ad8c415ca47fc"
     )
     assert (
-        att_document["pcrs"]["sha256"]["2"]
-        == "0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
+        att_document["pcrs"]["sha256"][2]
+        == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
     )
     assert (
-        att_document["pcrs"]["sha256"]["3"]
-        == "0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
+        att_document["pcrs"]["sha256"][3]
+        == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
     )
     assert (
-        att_document["pcrs"]["sha256"]["4"]
-        == "0x1F0105624AB37B9AF59DA6618A406860E33EF6F42A38DDAF6ABFAB8F23802755"
+        att_document["pcrs"]["sha256"][4]
+        == "1f0105624ab37b9af59da6618a406860e33ef6f42a38ddaf6abfab8f23802755"
     )
     assert (
-        att_document["pcrs"]["sha256"]["5"]
-        == "0xD36183A4CE9F539D686160695040237DA50E4AD80600607F84EFF41CF394DCD8"
+        att_document["pcrs"]["sha256"][5]
+        == "d36183a4ce9f539d686160695040237da50e4ad80600607f84eff41cf394dcd8"
     )
 
     # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
@@ -200,8 +204,6 @@ def test_check_pass():
     print(
         check_event_log(
             build_response["event_log"],
-            att_document["pcrs"]["sha256"][str(PCR_FOR_MEASUREMENT)]
-            .lower()
-            .removeprefix("0x"),
+            att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
         )
     )
