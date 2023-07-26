@@ -15,8 +15,9 @@ pyyaml = { version = "^6.0" }
 pydantic = { version = "^1.10.7" }
 pyopenssl = { version = "^23.2.0" }
 inquirer = { version = "^3.1" }
-typer = { version = "^0.9.0" }
+typer = {extras = ["all"], version = "^0.9.0"}
 aicert-common = { path = "../common" }
+importlib-metadata = "^6.8.0"
 
 [build-system]
 requires = ["poetry-core"]

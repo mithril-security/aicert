@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"name": "root",
+			"path": "."
+		},
+		{
+			"path": "server"
+		},
+		{
+			"path": "cli"
+		}
+	],
+}

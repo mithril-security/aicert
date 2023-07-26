@@ -1,3 +1,7 @@
 {
-"python.terminal.activateEnvironment": false,
+    "python.terminal.activateEnvironment": false,
+    "files.exclude": {
+        "server": true,
+        "cli": true,
+    }
 }
