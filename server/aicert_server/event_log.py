@@ -5,10 +5,11 @@ import hashlib
 import json
 import docker
 from pathlib import Path
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, List
 
 from aicert_common.protocol import Resource, BuildRequest
-from .tpm import tpm_extend_pcr, PCR_FOR_MEASUREMENT
+from .tpm import quote, cert_chain, tpm_extend_pcr, PCR_FOR_MEASUREMENT
+from .cmd_line import CmdLine
 
 
 docker_client = docker.from_env()
@@ -40,20 +41,27 @@ class EventLog:
     >>> event_log.append(event_start_build)
     """
 
-    def __init__(self):
-        self.event_log = []
+    def __init__(self, debug: bool = False):
+        self._event_log = []
         self._resolved_images: Dict[str, Any] = {}
+        self._debug = debug
 
     def append(self, event: Dict[str, Any]):
         event_json = json.dumps(event)
-        hash_event = hashlib.sha256(event_json.encode()).hexdigest()
-        tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
-        self.event_log.append(event_json)
+        if self._debug:
+            print(f"DEBUG: {event}")
+        else:
+            hash_event = hashlib.sha256(event_json.encode()).hexdigest()
+            tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
+        self._event_log.append(event_json)
 
-    def get(self):
-        return self.event_log
+    def attest(self):
+        return {
+            "event_log": self._event_log,
+            "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()} if not self._debug else {"debug": True},
+        }
     
-    def docker_run(self, cmd: str, workspace: Union[Path, str], image: str = BASE_IMAGE) -> str:
+    def docker_run(self, cmd: Union[str, CmdLine], workspace: Union[Path, str], image: str = BASE_IMAGE) -> str:
         if not image in self._resolved_images:
             resolved_image = docker_client.images.pull(image)
             self.append(
@@ -68,15 +76,15 @@ class EventLog:
             resolved_image = self._resolved_images[image]
         return docker_client.containers.run(
             resolved_image,
-            cmd,
-            volumes={str(workspace): {"bind": "/mnt", "mode": "rw"}},
+            str(cmd),
+            volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
             working_dir="/mnt",
         ).decode("utf8").strip()
     
     def start_build(self, build_request: BuildRequest) -> None:
         self.append({
             "event_type": "start_build",
-            "build_request": build_request.model_dump(),
+            "build_request": build_request.dict(),
         })
     
     def build_artifacts(self, artifacts: Any) -> None:
@@ -90,29 +98,29 @@ class EventLog:
         resource_hash = ""
         if spec.resource_type == "git":
             self.docker_run(
-                cmd=[
-                    "git", "clone", f"https://github.com/{spec.repo}", path, "&&",
-                    "cd", path, "&&",
-                    "git", "checkout", spec.branch
-                ],
+                cmd=CmdLine(
+                    ["git", "clone", spec.repo, path],
+                    ["cd", path],
+                    ["git", "checkout", spec.branch],
+                ),
                 workspace=workspace,
             )
             if spec.dependencies == "poetry":
                 if not (workspace / path / "poetry.lock").exists() and not (workspace / path / "pyproject.toml").exists():
                     raise HTTPException(status_code=404, detail="Cannot resolve poetry dependencies without a `poetry.lock` or a `pyproject.toml` file")
                 self.docker_run(
-                    cmd=["poetry", "lock", "--no-update"],
+                    cmd=CmdLine(["poetry", "lock", "--no-update"]),
                     workspace=workspace / path
                 )
             resource_hash = self.docker_run(
-                cmd=["git", "rev-parse", "--verify", "HEAD"],
+                cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
                 workspace=workspace / path
             )
         else:
             download_path = f"/tmp/000_aicert_{str(path).replace('/', '_')}" if spec.resource_type == "archive" else path
-            cmd = ["curl", "-o", download_path, "-L", spec.url]
+            cmd = CmdLine(["curl", "-o", download_path, "-L", spec.url])
             if spec.resource_type == "archive":
-                cmd += ["&&", "tar", "-xzf" if spec.compression == "gzip" else "-xf", download_path]
+                cmd.extend(["tar", "-xzf" if spec.compression == "gzip" else "-xf", download_path])
             self.docker_run(
                 cmd=cmd,
                 workspace=workspace,
@@ -122,7 +130,7 @@ class EventLog:
         self.append(
             {
                 "event_type": "fetch_resource",
-                "resource": spec.model_dump(),
+                "resource": spec.dict(),
                 "resolved": {"hash": resource_hash},
             }
         )

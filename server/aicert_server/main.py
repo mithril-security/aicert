@@ -1,16 +1,19 @@
 #!/usr/bin/python3
 
 import base64
-import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
 import docker
-from pathlib import Path
+from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import Response
+import os
+from pathlib import Path
+import uvicorn
 
 from aicert_common.protocol import BuildRequest
-from .tpm import quote, cert_chain
-from .event_log import EventLog, BASE_IMAGE, sha256_file
+from .event_log import EventLog, sha256_file
+
+
+DEBUG = os.getenv('AICERT_DEBUG') is not None
 
 
 app = FastAPI()
@@ -36,7 +39,7 @@ def build(build_request: BuildRequest) -> Response:
     ...     ]
     True
     """
-    event_log = EventLog()
+    event_log = EventLog(debug=DEBUG)
     event_log.start_build(build_request)
 
     # create a workspace folder
@@ -52,7 +55,7 @@ def build(build_request: BuildRequest) -> Response:
         image=build_request.image,
     )
 
-    matches = list(Path("workspace").glob(build_request.outputs))
+    matches = list(workspace.glob(build_request.outputs))
 
     if not matches:
         raise HTTPException(status_code=404, detail=f"No files matching output pattern: '{build_request.artifact_pattern}'")
@@ -70,11 +73,7 @@ def build(build_request: BuildRequest) -> Response:
         raise HTTPException(status_code=404, detail=f"No files matching output pattern: '{build_request.artifact_pattern}'")
 
     event_log.build_artifacts(artifacts)
-
-    res = {
-        "event_log": event_log.get(),
-        "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()},
-    }
+    res = event_log.attest()
 
     # FastAPI encodes the response as json, but the quote contains raw bytes...
     # so we have to base64 encode then, this is ugly.
@@ -90,5 +89,7 @@ def build(build_request: BuildRequest) -> Response:
     return json_res
 
 
-if __name__ == "__main__":
+def main():
+    if DEBUG:
+        print("Warning: running in debug mode, the TPM will not be used")
     uvicorn.run(app, host="0.0.0.0", port=8000)
