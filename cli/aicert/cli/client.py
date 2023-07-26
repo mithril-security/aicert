@@ -1,17 +1,20 @@
 import os
 import pkgutil
 import subprocess
+import sys
 import typer
-from typing import Optional
+from typing import List, Optional
 import yaml
 
 from aicert_common.protocol import ConfigFile
 from .logging import log
 
 class Client:
-    def __init__(self, cfg: Optional[ConfigFile] = None, interactive: bool = True, auto_approve: bool = False) -> None:
+    def __init__(self, cfg: Optional[ConfigFile] = None, interactive: bool = True, auto_approve: bool = True) -> None:
         self._cfg: Optional[ConfigFile] = cfg
         self._tf_available: Optional[bool] = None
+        self._interactive = interactive
+        self._auto_approve = auto_approve
     
     def _copy_template(
         self,
@@ -51,19 +54,21 @@ class Client:
     def _assert_tf_available(self):
         if self._tf_available is None:
             # Check if the terraform binary is installed
-            res = subprocess.run(
-                ["terraform", "--version"],
-                capture_output=True,
-                text=True,
-            )
-
-            self._tf_available = res.returncode == 0
+            try:
+                res = subprocess.run(
+                    ["terraform", "--version"],
+                    capture_output=True,
+                    text=True,
+                )
+                self._tf_available = res.returncode == 0
+            except FileNotFoundError:
+                self._tf_available = False
 
         if not self._tf_available:
             log.error(
                 "Terraform CLI was not found in PATH. Follow the instructions at [underline]https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[/]."
             )
-            exit(1)
+            raise typer.Exit(code=1)
     
     def _tf_init(self, dir: str):
         self._assert_tf_available()
