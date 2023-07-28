@@ -8,7 +8,7 @@
 			"path": "server"
 		},
 		{
-			"path": "cli"
+			"path": "client"
 		},
 		{
 			"path": "control_plane"
