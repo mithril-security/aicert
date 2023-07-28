@@ -5,25 +5,29 @@ from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
-import os
 from pathlib import Path
 import uvicorn
 
-from aicert_common.protocol import BuildRequest
-from .builder import Builder
+from aicert_common.protocol import BuildRequest, FileList
+from .builder import Builder, SIMULATION_MODE
 
 
-DEBUG = os.getenv('AICERT_DEBUG') is not None
 WORKSPACE = Path.cwd() / "workspace"
-
-
-if not WORKSPACE.exists():
-    WORKSPACE.mkdir()
+WORKSPACE.mkdir(exist_ok=SIMULATION_MODE)
 
 
 app = FastAPI()
 app.mount("/outputs", StaticFiles(directory=WORKSPACE), name="outputs")
 
+
+@app.get("/outputs")
+def list_outputs(pattern: str) -> FileList:
+    if Path(pattern).is_absolute():
+        raise HTTPException(status_code=403, detail="Cannot list files outside of workdir")
+    return FileList(
+        pattern=pattern,
+        file_list=[str(sub.relative_to(WORKSPACE)) for sub in WORKSPACE.glob(pattern) if sub.is_file()]
+    )
 
 @app.post("/submit", status_code=202)
 def submit(build_request: BuildRequest) -> None:
@@ -46,6 +50,6 @@ def attestation() -> Response:
 
 
 def main():
-    if DEBUG:
-        print("Warning: running in debug mode, the TPM will not be used")
+    if SIMULATION_MODE:
+        print("WARNING: running in SIMULATION MODE, the TPM will not be used")
     uvicorn.run(app, host="0.0.0.0", port=8000)

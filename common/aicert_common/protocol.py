@@ -32,7 +32,13 @@ class BuildRequest(BaseModel):
     outputs: str
 
 
-class ConfigFile(BuildRequest):
+class ConfigFile(BaseModel):
     version: str
     cloud: Literal["azure"]
     machine: str
+    build: BuildRequest
+
+
+class FileList(BaseModel):
+    pattern: str
+    file_list: List[str]

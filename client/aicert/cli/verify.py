@@ -12,9 +12,7 @@ from .logging import log
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 
-req = requests.get("http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt")
-req.raise_for_status()
-ROOT_CERT_DER = req.content
+
 PCR_FOR_MEASUREMENT = 16
 
 
@@ -47,7 +45,9 @@ def verify_ak_cert(cert_chain: list[bytes]) -> bytes:
     store = crypto.X509Store()
 
     # Create the CA cert object from PEM string, and store into X509Store
-    _rootca_cert = crypto.load_certificate(crypto.FILETYPE_ASN1, ROOT_CERT_DER)  # type: ignore
+    req = requests.get("http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt")
+    req.raise_for_status()
+    _rootca_cert = crypto.load_certificate(crypto.FILETYPE_ASN1, req.content)  # type: ignore
     store.add_cert(_rootca_cert)
 
     chain = [

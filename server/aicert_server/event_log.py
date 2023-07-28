@@ -23,21 +23,21 @@ class EventLog:
     >>> event_log.append(event_start_build)
     """
 
-    def __init__(self, debug: bool = False):
-        self._event_log = []
-        self._debug = debug
+    def __init__(self, simulation_mode: bool = False):
+        self.__event_log = []
+        self.__simulation_mode = simulation_mode
 
-    def _append(self, event: Dict[str, Any]):
+    def __append(self, event: Dict[str, Any]):
         event_json = json.dumps(event)
-        if self._debug:
-            print(f"DEBUG: {event}")
+        if self.__simulation_mode:
+            print(f"SIMULATION MODE: {event}")
         else:
             hash_event = hashlib.sha256(event_json.encode()).hexdigest()
             tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
-        self._event_log.append(event_json)
+        self.__event_log.append(event_json)
     
     def build_request_event(self, build_request: BuildRequest) -> None:
-        self._append({
+        self.__append({
             "event_type": "build_request",
             "content": {
                 "spec": { "build_request_proto": build_request.dict() },
@@ -45,7 +45,7 @@ class EventLog:
         })
     
     def input_resource_event(self, resource: Resource, resource_hash: str) -> None:
-        self._append({
+        self.__append({
             "event_type": "input_resource",
             "content": {
                 "spec": { "resource_proto": resource.dict() },
@@ -54,7 +54,7 @@ class EventLog:
         })
     
     def input_image_event(self, input_image: str, input_image_id: str) -> None:
-        self._append({
+        self.__append({
             "event_type": "input_image",
             "content": {
                 "spec": { "image_name": input_image },
@@ -63,7 +63,7 @@ class EventLog:
         })
     
     def outputs_event(self, outputs: List[Tuple[str, str]]) -> None:
-        self._append({
+        self.__append({
             "event_type": "outputs",
             "content": [
                 {
@@ -76,6 +76,6 @@ class EventLog:
 
     def attest(self) -> Dict[str, Any]:
         return {
-            "event_log": self._event_log,
-            "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()} if not self._debug else {"debug": True},
+            "event_log": self.__event_log,
+            "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()} if not self.__simulation_mode else {"simulation_mode": True},
         }

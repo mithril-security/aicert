@@ -205,3 +205,5 @@ deploy/client.csr
 deploy/client.key
 deploy/inventory.ini
 deploy/tfplan
+
+workspace
