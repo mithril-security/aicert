@@ -25,9 +25,6 @@ async def launch_runner():
     deploy_folder = Path(__file__).parent / ".." / ".." / "deploy"
     shutil.copytree(deploy_folder, aicert_home, dirs_exist_ok=True)
 
-    # Terrible : We create symlinks to the server source code
-    # to be deployed this assumes that the client was installed
-    # via git clone + poetry install
     try:
         os.symlink(
             Path(__file__).parent / ".." / ".." / "server",

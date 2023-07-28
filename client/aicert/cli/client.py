@@ -205,7 +205,7 @@ class Client:
 
         log.info("AICert project has been initialized.")
 
-    def build_cmd(self, dir: Path, cluster_url="http://localhost:8082") -> None:
+    def build_cmd(self, dir: Path, control_plane_url: str) -> None:
         """Run the actual build on a server
         - copy terraform templates to ~/.aicert
         - run terraform init on ~/.aicert
@@ -216,7 +216,7 @@ class Client:
         """
         if not self.__simulation_mode:
             log.info("Launching the runner...")
-            r = requests.post(f"{cluster_url}/launch_runner")
+            r = requests.post(f"{control_plane_url}/launch_runner")
             log.info("Runner is ready.")
             r.raise_for_status()
             r = r.json()
