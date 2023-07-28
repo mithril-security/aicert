@@ -71,7 +71,9 @@ def cert_chain() -> List[bytes]:
         return req.content
 
     intermediate_cert = get_certificate_from_url(
-        "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA01.AME.GBL_AME%20Infra%20CA%2002(4).crt"
+        # New one :
+        "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA02.AME.GBL_AME%20Infra%20CA%2006.crt"
+        # Old one : "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA01.AME.GBL_AME%20Infra%20CA%2002(4).crt"
     )
     root_cert = get_certificate_from_url(
         "http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt"

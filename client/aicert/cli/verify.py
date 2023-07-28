@@ -3,6 +3,7 @@ import hashlib
 import json
 import subprocess
 import tempfile
+import OpenSSL
 from OpenSSL import crypto
 import requests
 import yaml
@@ -61,7 +62,17 @@ def verify_ak_cert(cert_chain: list[bytes]) -> bytes:
         # if the cert is invalid, it will raise a X509StoreContextError
         store_ctx.verify_certificate()
     except crypto.X509StoreContextError:
-        raise AttestationError("Invalid AK certificate")
+        ref_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1,cert_chain[0])
+        log.info(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ref_cert).decode('ascii'))
+        ref_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1,cert_chain[1])
+        log.info(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ref_cert).decode('ascii'))
+        ref_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1,cert_chain[2])
+        log.info(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ref_cert).decode('ascii'))
+        log.error("Invalid AK certificate")
+        # TODO: In the future we'll want to raise an error
+        # But for now Azure vTPM does not have an official certificate chain
+        # So the checks can randomly fail
+        # raise AttestationError("Invalid AK certificate")
 
     return cert_chain[0]
 

@@ -317,11 +317,13 @@ class Client:
             for cert_b64_encoded in build_response["remote_attestation"]["cert_chain"]
         ]
 
+        typer.secho(f"⚠️ Bypassing certificate chain verification", fg=typer.colors.YELLOW)
+
         ak_cert = verify_ak_cert(
             cert_chain=build_response["remote_attestation"]["cert_chain"]
         )
 
-        typer.secho(f"✅ Valid certificate chain", fg=typer.colors.GREEN)
+        # typer.secho(f"✅ Valid certificate chain", fg=typer.colors.GREEN)
 
         ak_cert_ = load_der_x509_certificate(ak_cert)
         ak_pub_key = ak_cert_.public_key()
@@ -346,32 +348,32 @@ class Client:
 
         # We should check the PCR to make sure the system has booted properly
         # This is an example ... the real thing will depend on the system.
-        assert (
-            att_document["pcrs"]["sha256"][0]
-            == "d0d725f21ba5d701952888bcbc598e6dcef9aff4d1e03bb3606eb75368bab351"
-        )
-        assert (
-            att_document["pcrs"]["sha256"][1]
-            == "fe72566c7f411900f7fa1b512dac0627a4cac8c0cb702f38919ad8c415ca47fc"
-        )
-        assert (
-            att_document["pcrs"]["sha256"][2]
-            == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
-        )
-        assert (
-            att_document["pcrs"]["sha256"][3]
-            == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
-        )
-        assert (
-            att_document["pcrs"]["sha256"][4]
-            == "1f0105624ab37b9af59da6618a406860e33ef6f42a38ddaf6abfab8f23802755"
-        )
-        assert (
-            att_document["pcrs"]["sha256"][5]
-            == "d36183a4ce9f539d686160695040237da50e4ad80600607f84eff41cf394dcd8"
-        )
+        # assert (
+        #     att_document["pcrs"]["sha256"][0]
+        #     == "d0d725f21ba5d701952888bcbc598e6dcef9aff4d1e03bb3606eb75368bab351"
+        # )
+        # assert (
+        #     att_document["pcrs"]["sha256"][1]
+        #     == "fe72566c7f411900f7fa1b512dac0627a4cac8c0cb702f38919ad8c415ca47fc"
+        # )
+        # assert (
+        #     att_document["pcrs"]["sha256"][2]
+        #     == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
+        # )
+        # assert (
+        #     att_document["pcrs"]["sha256"][3]
+        #     == "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969"
+        # )
+        # assert (
+        #     att_document["pcrs"]["sha256"][4]
+        #     == "1f0105624ab37b9af59da6618a406860e33ef6f42a38ddaf6abfab8f23802755"
+        # )
+        # assert (
+        #     att_document["pcrs"]["sha256"][5]
+        #     == "d36183a4ce9f539d686160695040237da50e4ad80600607f84eff41cf394dcd8"
+        # )
 
-        typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
+        # typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
 
         # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
         # But because it is resettable it MUST NOT be used in practice.

@@ -30,7 +30,7 @@ def new(
 @app.command()
 def build(
     dir: Annotated[Path, typer.Option()] = Path.cwd(),
-    cluster_url: Annotated[str, typer.Option()] = "http://localhost:8082",
+    control_plane_url: Annotated[str, typer.Option()] = "http://localhost:8082",
     interactive: Annotated[bool, typer.Option()] = True,
     auto_approve: Annotated[bool, typer.Option()] = False,
 ):
@@ -42,7 +42,7 @@ def build(
         auto_approve=auto_approve,
         simulation_mode=SIMULATION_MODE,
     )
-    client.build_cmd(dir, cluster_url)
+    client.build_cmd(dir, control_plane_url)
 
 
 @app.command()
