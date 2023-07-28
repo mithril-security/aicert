@@ -156,7 +156,6 @@ def test_check_pass():
         cert_chain=build_response["remote_attestation"]["cert_chain"]
     )
 
-    
     ak_cert_ = load_der_x509_certificate(ak_cert)
     ak_pub_key = ak_cert_.public_key()
     ak_pub_key_pem = ak_pub_key.public_bytes(

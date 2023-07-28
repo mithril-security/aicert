@@ -6,7 +6,7 @@ from typing import Annotated
 from .client import Client
 
 
-SIMULATION_MODE = os.getenv('AICERT_SIMULATION_MODE') is not None
+SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
 
 
 app = typer.Typer(rich_markup_mode="rich")
@@ -22,7 +22,7 @@ def new(
     client = Client(
         interactive=interactive,
         auto_approve=auto_approve,
-        simulation_mode=SIMULATION_MODE
+        simulation_mode=SIMULATION_MODE,
     )
     client.new_cmd(dir)
 
@@ -39,7 +39,7 @@ def build(
         dir=dir,
         interactive=interactive,
         auto_approve=auto_approve,
-        simulation_mode=SIMULATION_MODE
+        simulation_mode=SIMULATION_MODE,
     )
     client.build_cmd(dir)
 
@@ -51,11 +51,11 @@ def verify(
     auto_approve: Annotated[bool, typer.Option()] = False,
 ):
     """Verify attestation and output files"""
-    
+
     client = Client.from_config_file(
         dir=dir,
         interactive=interactive,
         auto_approve=auto_approve,
-        simulation_mode=SIMULATION_MODE
+        simulation_mode=SIMULATION_MODE,
     )
     client.verify_cmd(dir)

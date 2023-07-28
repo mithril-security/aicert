@@ -13,6 +13,7 @@ app = FastAPI()
 client = Client()
 aicert_home = Path.home() / ".aicert"
 
+
 @app.post("/launch_runner")
 async def launch_runner():
     # Check if terraform is installed
@@ -21,7 +22,7 @@ async def launch_runner():
     # Make ~/.aicert folder (if not exists)
     os.makedirs(aicert_home, exist_ok=True)
 
-    deploy_folder = Path(__file__).parent  / ".." / ".." / "deploy"
+    deploy_folder = Path(__file__).parent / ".." / ".." / "deploy"
     shutil.copytree(deploy_folder, aicert_home, dirs_exist_ok=True)
 
     # Terrible : We create symlinks to the server source code
@@ -29,7 +30,7 @@ async def launch_runner():
     # via git clone + poetry install
     try:
         os.symlink(
-            Path(__file__).parent  / ".." / ".." / "server",
+            Path(__file__).parent / ".." / ".." / "server",
             aicert_home / "server",
         )
     except FileExistsError:
@@ -73,7 +74,7 @@ async def launch_runner():
         "runner_ip": vm_ip,
         "client_cert": client_cert.read_text(),
         "client_private_key": client_private_key.read_text(),
-        "server_ca_cert": server_ca_cert.read_text()
+        "server_ca_cert": server_ca_cert.read_text(),
     }
 
 

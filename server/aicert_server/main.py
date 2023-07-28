@@ -23,16 +23,24 @@ app.mount("/outputs", StaticFiles(directory=WORKSPACE), name="outputs")
 @app.get("/outputs")
 def list_outputs(pattern: str) -> FileList:
     if Path(pattern).is_absolute():
-        raise HTTPException(status_code=403, detail="Cannot list files outside of workdir")
+        raise HTTPException(
+            status_code=403, detail="Cannot list files outside of workdir"
+        )
     return FileList(
         pattern=pattern,
-        file_list=[str(sub.relative_to(WORKSPACE)) for sub in WORKSPACE.glob(pattern) if sub.is_file()]
+        file_list=[
+            str(sub.relative_to(WORKSPACE))
+            for sub in WORKSPACE.glob(pattern)
+            if sub.is_file()
+        ],
     )
+
 
 @app.post("/submit", status_code=202)
 def submit(build_request: BuildRequest) -> None:
     Builder.submit_build(build_request, WORKSPACE)
-    
+
+
 @app.get("/attestation")
 def attestation() -> Response:
     if not Builder.poll_build():

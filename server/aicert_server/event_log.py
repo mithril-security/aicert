@@ -35,47 +35,54 @@ class EventLog:
             hash_event = hashlib.sha256(event_json.encode()).hexdigest()
             tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
         self.__event_log.append(event_json)
-    
+
     def build_request_event(self, build_request: BuildRequest) -> None:
-        self.__append({
-            "event_type": "build_request",
-            "content": {
-                "spec": { "build_request_proto": build_request.dict() },
+        self.__append(
+            {
+                "event_type": "build_request",
+                "content": {
+                    "spec": {"build_request_proto": build_request.dict()},
+                },
             }
-        })
-    
+        )
+
     def input_resource_event(self, resource: Resource, resource_hash: str) -> None:
-        self.__append({
-            "event_type": "input_resource",
-            "content": {
-                "spec": { "resource_proto": resource.dict() },
-                "resolved": { "hash": resource_hash },
+        self.__append(
+            {
+                "event_type": "input_resource",
+                "content": {
+                    "spec": {"resource_proto": resource.dict()},
+                    "resolved": {"hash": resource_hash},
+                },
             }
-        })
-    
+        )
+
     def input_image_event(self, input_image: str, input_image_id: str) -> None:
-        self.__append({
-            "event_type": "input_image",
-            "content": {
-                "spec": { "image_name": input_image },
-                "resolved": { "id": input_image_id },
+        self.__append(
+            {
+                "event_type": "input_image",
+                "content": {
+                    "spec": {"image_name": input_image},
+                    "resolved": {"id": input_image_id},
+                },
             }
-        })
-    
+        )
+
     def outputs_event(self, outputs: List[Tuple[str, str]]) -> None:
-        self.__append({
-            "event_type": "outputs",
-            "content": [
-                {
-                    "spec": { "path": path },
-                    "resolved": { "hash": hash }
-                }
-                for path, hash in outputs
-            ]
-        })
+        self.__append(
+            {
+                "event_type": "outputs",
+                "content": [
+                    {"spec": {"path": path}, "resolved": {"hash": hash}}
+                    for path, hash in outputs
+                ],
+            }
+        )
 
     def attest(self) -> Dict[str, Any]:
         return {
             "event_log": self.__event_log,
-            "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()} if not self.__simulation_mode else {"simulation_mode": True},
+            "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()}
+            if not self.__simulation_mode
+            else {"simulation_mode": True},
         }

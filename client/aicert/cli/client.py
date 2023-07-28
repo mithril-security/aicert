@@ -17,12 +17,19 @@ import yaml
 from aicert_common.protocol import ConfigFile, FileList
 from .logging import log
 from .requests_adapter import ForcedIPHTTPSAdapter
-from .verify import PCR_FOR_MEASUREMENT, check_event_log, check_quote, decode_b64_encoding, verify_ak_cert
+from .verify import (
+    PCR_FOR_MEASUREMENT,
+    check_event_log,
+    check_quote,
+    decode_b64_encoding,
+    verify_ak_cert,
+)
 
 
 class Client:
     def __init__(
-        self, cfg: Optional[ConfigFile] = None,
+        self,
+        cfg: Optional[ConfigFile] = None,
         interactive: bool = True,
         auto_approve: bool = True,
         simulation_mode: bool = False,
@@ -35,7 +42,7 @@ class Client:
 
         if self.__simulation_mode:
             log.warning("Running in simulation mode")
-    
+
     def __copy_template(
         self,
         src_path: str,
@@ -49,7 +56,11 @@ class Client:
 
         if dst_path.exists():
             if confirm_replace:
-                replace = typer.confirm(f"Replace file {dst_path}?") if self.__interactive else True
+                replace = (
+                    typer.confirm(f"Replace file {dst_path}?")
+                    if self.__interactive
+                    else True
+                )
 
             if not replace and not merge:
                 return
@@ -68,7 +79,7 @@ class Client:
 
         if executable:
             dst_path.chmod(0o775)
-    
+
     def __assert_tf_available(self):
         if self.__tf_available is None:
             # Check if the terraform binary is installed
@@ -87,7 +98,7 @@ class Client:
                 "Terraform CLI was not found in PATH. Follow the instructions at [underline]https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[/]."
             )
             raise typer.Exit(code=1)
-    
+
     def __tf_init(self, dir: Path):
         self.__assert_tf_available()
 
@@ -104,7 +115,7 @@ class Client:
             args += ["--var", f"{k}={v}"]
 
         self.__run_subprocess(args, dir=dir)
-    
+
     def __tf_destroy(self, dir: Path, vars: dict = {}):
         self.__assert_tf_available()
 
@@ -115,7 +126,7 @@ class Client:
             args += ["--var", f"{k}={v}"]
 
         self.__run_subprocess(args, dir=dir)
-    
+
     def __run_subprocess(
         self,
         command: List[str],
@@ -164,7 +175,7 @@ class Client:
                 raise typer.Exit(code=1)
 
         self.__cfg = ConfigFile(**data)
-    
+
     def __save_config(self, dir: Path):
         with (dir / "aicert.yaml").open("wb") as file:
             yaml.safe_dump(dict(self.__cfg), file)
@@ -174,7 +185,7 @@ class Client:
         dir: Path,
         interactive: bool = True,
         auto_approve: bool = False,
-        simulation_mode = False
+        simulation_mode=False,
     ) -> "Client":
         client = Client(
             interactive=interactive,
@@ -184,22 +195,24 @@ class Client:
         client.__load_config(dir)
 
         return client
-    
+
     def new_cmd(self, dir: Path) -> None:
-        """ Set up the workspace by copying template files"""
+        """Set up the workspace by copying template files"""
         dir.mkdir(exist_ok=True)
-        self.__copy_template("templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True)
-        
+        self.__copy_template(
+            "templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True
+        )
+
         log.info("AICert project has been initialized.")
 
-    def build_cmd(self, dir: Path, cluster_url = "http://localhost:8082") -> None:
-        """ Run the actual build on a server
-          - copy terraform templates to ~/.aicert
-          - run terraform init on ~/.aicert
-          - run terraform apply on ~/.aicert
-          - send a request to the server
-          - save outputs to a file (attestation and artifacts)
-          - run terraform destroy on ~/.aicert
+    def build_cmd(self, dir: Path, cluster_url="http://localhost:8082") -> None:
+        """Run the actual build on a server
+        - copy terraform templates to ~/.aicert
+        - run terraform init on ~/.aicert
+        - run terraform apply on ~/.aicert
+        - send a request to the server
+        - save outputs to a file (attestation and artifacts)
+        - run terraform destroy on ~/.aicert
         """
         if not self.__simulation_mode:
             log.info("Launching the runner...")
@@ -211,18 +224,19 @@ class Client:
             base_url = "https://aicert_worker"
 
             session = requests.Session()
-            session.mount("https://aicert_worker", ForcedIPHTTPSAdapter(dest_ip=r['runner_ip']))
+            session.mount(
+                "https://aicert_worker", ForcedIPHTTPSAdapter(dest_ip=r["runner_ip"])
+            )
 
+            client_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
+            client_key_file = tempfile.NamedTemporaryFile(mode="w+t")
+            server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
 
-            client_crt_file = tempfile.NamedTemporaryFile(mode = "w+t")
-            client_key_file = tempfile.NamedTemporaryFile(mode = "w+t")
-            server_ca_crt_file = tempfile.NamedTemporaryFile(mode = "w+t")
-
-            client_crt_file.write(r['client_cert'])
+            client_crt_file.write(r["client_cert"])
             client_crt_file.flush()
-            client_key_file.write(r['client_private_key'])
+            client_key_file.write(r["client_private_key"])
             client_key_file.flush()
-            server_ca_crt_file.write(r['server_ca_cert'])
+            server_ca_crt_file.write(r["server_ca_cert"])
             server_ca_crt_file.flush()
 
             session.verify = server_ca_crt_file.name
@@ -233,11 +247,14 @@ class Client:
 
         # Submit build request
         log.info("Submitting build request")
-        log_and_exit_for_status(session.post(
-            f"{base_url}/submit",
-            data=self.__cfg.build.json(),
-            headers={"Content-Type":"application/json"},
-        ), "Cannot submit build to server")
+        log_and_exit_for_status(
+            session.post(
+                f"{base_url}/submit",
+                data=self.__cfg.build.json(),
+                headers={"Content-Type": "application/json"},
+            ),
+            "Cannot submit build to server",
+        )
 
         # Wait until attestation is available
         while True:
@@ -245,7 +262,9 @@ class Client:
             if res.status_code == 204:
                 sleep(1)
                 continue
-            log_and_exit_for_status(res, "Cannot retrieve attestation, build likely failed")
+            log_and_exit_for_status(
+                res, "Cannot retrieve attestation, build likely failed"
+            )
 
             with (dir / "attestation.json").open("wb") as f:
                 f.write(res.content)
@@ -253,7 +272,7 @@ class Client:
         log.info("Attestation received")
 
         # Download output files
-        pattern = urllib.parse.quote(self.__cfg.build.outputs ,safe="")
+        pattern = urllib.parse.quote(self.__cfg.build.outputs, safe="")
         res = session.get(f"{base_url}/outputs?pattern={pattern}")
         log_and_exit_for_status(res, "Cannot download outputs list")
         file_list = FileList.parse_raw(res.text)
@@ -270,10 +289,9 @@ class Client:
             requests.post("http://localhost:8082/destroy_runner")
             log.info("Runner destroyed successfully")
 
-    
     def verify_cmd(self, dir: Path) -> None:
         """Launch verification process
-        
+
         Example:
         aicert verify "/workspaces/aicert_dev/server/aicert_server/sample_build_response.json"
         """
@@ -282,10 +300,15 @@ class Client:
 
         if "simulation_mode" in build_response["remote_attestation"]:
             if self.__simulation_mode:
-                typer.secho(f"👀 Attestation generated in simulation mode", fg=typer.colors.YELLOW)
+                typer.secho(
+                    f"👀 Attestation generated in simulation mode",
+                    fg=typer.colors.YELLOW,
+                )
                 typer.secho(f"✨✨✨ ALL CHECKED PASSED", fg=typer.colors.GREEN)
             else:
-                typer.secho(f"❌ Attestation generated in simulation mode", fg=typer.colors.RED)
+                typer.secho(
+                    f"❌ Attestation generated in simulation mode", fg=typer.colors.RED
+                )
                 typer.secho(f"💀 INVALID ATTESTATION", fg=typer.colors.RED)
             return
 
@@ -317,8 +340,9 @@ class Client:
 
         typer.secho(f"✅ Valid quote", fg=typer.colors.GREEN)
 
-
-        log.info(f"Attestation Document > PCRs :  \n{yaml.safe_dump(att_document['pcrs']['sha256'])}")
+        log.info(
+            f"Attestation Document > PCRs :  \n{yaml.safe_dump(att_document['pcrs']['sha256'])}"
+        )
 
         # We should check the PCR to make sure the system has booted properly
         # This is an example ... the real thing will depend on the system.
@@ -346,19 +370,18 @@ class Client:
             att_document["pcrs"]["sha256"][5]
             == "d36183a4ce9f539d686160695040237da50e4ad80600607f84eff41cf394dcd8"
         )
-        
-        typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
 
+        typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
 
         # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
         # But because it is resettable it MUST NOT be used in practice.
         # An unused PCR that cannot be reset (SRTM) MUST be used instead
         # PCR 14 or 15 should do it
         event_log = check_event_log(
-                build_response["event_log"],
-                att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
-            )
-        
+            build_response["event_log"],
+            att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
+        )
+
         typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
 
         print(yaml.safe_dump(event_log))

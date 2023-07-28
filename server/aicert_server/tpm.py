@@ -114,4 +114,3 @@ def quote() -> Dict[str, bytes]:
         quote_pcr = quote_pcr_file.read()
 
     return {"message": quote_msg, "signature": quote_sig, "pcr": quote_pcr}
-

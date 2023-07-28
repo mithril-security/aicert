@@ -17,7 +17,6 @@ class Client:
         self._interactive = interactive
         self._auto_approve = auto_approve
 
-
     def _assert_tf_available(self):
         if self._tf_available is None:
             # Check if the terraform binary is installed

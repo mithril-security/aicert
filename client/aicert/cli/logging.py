@@ -18,7 +18,7 @@ logging.basicConfig(
     level=LOG_LEVEL,
     format="%(message)s",
     datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)]
+    handlers=[RichHandler(rich_tracebacks=True)],
 )
 
 log = logging.getLogger("rich")
