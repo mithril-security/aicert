@@ -1,3 +1,4 @@
+import tempfile
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 import json
@@ -191,7 +192,7 @@ class Client:
         
         log.info("AICert project has been initialized.")
 
-    def build_cmd(self, dir: Path) -> None:
+    def build_cmd(self, dir: Path, cluster_url = "http://localhost:8082") -> None:
         """ Run the actual build on a server
           - copy terraform templates to ~/.aicert
           - run terraform init on ~/.aicert
@@ -201,35 +202,31 @@ class Client:
           - run terraform destroy on ~/.aicert
         """
         if not self.__simulation_mode:
-            # Check if terraform is installed
-            self.__assert_tf_available()
-
-            # Make ~/.aicert folder (if not exists)
-            aicert_home = Path.home() / ".aicert"
-            aicert_home.mkdir(exist_ok=True)
-            deploy_folder = Path(__file__).parent / "deploy"
-            shutil.copytree(deploy_folder, aicert_home, dirs_exist_ok=True)
-            
-            # Provision an AICert VM
-            self.__tf_init(aicert_home)
-            self.__tf_apply(aicert_home)
-            self.__run_subprocess(["bash", "provision.sh"], cwd=aicert_home)
-
-            server_ip = self.__run_subprocess(
-                ["terraform", "output", "-raw", "public_ip_address"],
-                cwd=aicert_home,
-                text=True,
-                return_stdout=True,
-                assert_returncode=True,
-            )
+            log.info("Launching the runner...")
+            r = requests.post(f"{cluster_url}/launch_runner")
+            log.info("Runner is ready.")
+            r.raise_for_status()
+            r = r.json()
 
             base_url = "https://aicert_worker"
+
             session = requests.Session()
-            session.mount(base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip))
-            client_cert = (aicert_home / "client.crt", aicert_home / "client.key")
-            server_ca_cert =  aicert_home / "tls_ca.crt"
-            session.verify = server_ca_cert
-            session.cert = client_cert
+            session.mount("https://aicert_worker", ForcedIPHTTPSAdapter(dest_ip=r['runner_ip']))
+
+
+            client_crt_file = tempfile.NamedTemporaryFile(mode = "w+t")
+            client_key_file = tempfile.NamedTemporaryFile(mode = "w+t")
+            server_ca_crt_file = tempfile.NamedTemporaryFile(mode = "w+t")
+
+            client_crt_file.write(r['client_cert'])
+            client_crt_file.flush()
+            client_key_file.write(r['client_private_key'])
+            client_key_file.flush()
+            server_ca_crt_file.write(r['server_ca_cert'])
+            server_ca_crt_file.flush()
+
+            session.verify = server_ca_crt_file.name
+            session.cert = (client_crt_file.name, client_key_file.name)
         else:
             base_url = "http://localhost:8000"
             session = requests.Session()
@@ -269,7 +266,10 @@ class Client:
                 f.write(res.content)
 
         if not self.__simulation_mode:
-            self.__tf_destroy(aicert_home)
+            log.info("Destoying runner")
+            requests.post("http://localhost:8082/destroy_runner")
+            log.info("Runner destroyed successfully")
+
     
     def verify_cmd(self, dir: Path) -> None:
         """Launch verification process

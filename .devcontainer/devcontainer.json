@@ -43,7 +43,8 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"4ops.terraform"
+				"4ops.terraform",
+				"ms-toolsai.jupyter"
 			]
 		}
 	}
