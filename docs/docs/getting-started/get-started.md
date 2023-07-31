@@ -10,8 +10,7 @@ The end-user can then use our **Python client SDK** to verify that the AICert pr
 
 **The workflow is as follows:**
 
-![workflow-dark](../../assets/workflow-dark.png#only-light)
-![workflow-light](../../assets/workflow.png#only-light)
+![workflow](../../assets/workflow.png)
 
 **AI builder workflow 🛠️**
 
