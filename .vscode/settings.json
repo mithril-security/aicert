@@ -1,9 +1,3 @@
 {
     "python.terminal.activateEnvironment": false,
-    "files.exclude": {
-        "server": true,
-        "client": true,
-        "control_plane": true,
-
-    }
 }
