@@ -2,13 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Literal, Union, Annotated, List, Optional
 
 class FileResource(BaseModel):
-    resource_type: Literal["file"]
-    url: str
-    path: str
-
-
-class ArchiveResource(BaseModel):
-    resource_type: Literal["archive"]
+    resource_type: Literal["file", "archive"]
     url: str
     compression: Literal["none", "gzip"]
     path: str
@@ -22,7 +16,7 @@ class GitResource(BaseModel):
     dependencies: Literal["none", "poetry"]
 
 
-Resource = Annotated[Union[FileResource, ArchiveResource, GitResource], Field(discriminator="resource_type")]
+Resource = Annotated[Union[FileResource, GitResource], Field(discriminator="resource_type")]
 
 
 class BuildRequest(BaseModel):

@@ -42,7 +42,11 @@ class Builder:
     @classmethod
     def __docker_run(cls, cmd: Union[str, CmdLine], workspace: Union[str, Path, str], image: str = BASE_IMAGE) -> str:
         if not image in cls.__resolved_images:
-            resolved_image = docker_client.images.pull(image)
+            resolved_image = (
+                docker_client.images.get(image.split("/")[-1])
+                if image.startswith("@local/") else
+                docker_client.images.pull(image)
+            )
             cls.__event_log.input_image_event(image, resolved_image.id)
             cls.__resolved_images[image] = resolved_image
         else:
@@ -56,6 +60,7 @@ class Builder:
 
     @classmethod
     def __fetch_resource(cls, spec: Resource, workspace: Path) -> None:
+        print(f"Fetchin resource : {spec.path}")
         path = Path(spec.path)
         if path.is_absolute():
             raise HTTPException(status_code=403, detail=f"Ressource path must be relative: {path}")
@@ -83,15 +88,28 @@ class Builder:
             )
             resource_hash = f"sha1:{resource_hash}"
         else:
-            download_path = f"/tmp/000_aicert_{str(path).replace('/', '_')}" if spec.resource_type == "archive" else path
-            cmd = CmdLine(["curl", "-o", download_path, "-L", spec.url])
+            print(f"Resource is not git")
+            download_path = (
+                f"/tmp/000_aicert_{str(path).replace('/', '_')}"
+                if spec.resource_type == "archive" or spec.compression == "gzip" else
+                path.name
+            )
+            final_dir = (workspace / path) if spec.resource_type == "archive" else (workspace / path.parent)
+            final_dir.mkdir(exist_ok=True, parents=True)
+            print(f"Created final dir: {final_dir}")
+            cmd = CmdLine(["curl", "-s", "-o", download_path, "-L", spec.url])
             if spec.resource_type == "archive":
                 cmd.extend(["tar", "-xzf" if spec.compression == "gzip" else "-xf", download_path])
-            cls.__docker_run(
+            elif spec.compression == "gzip":
+                cmd.extend(["gzip", "-c", "-d", download_path])
+                cmd.redirect(path.name)
+            cmd.extend(["sha256sum", download_path])
+            cmd.pipe(["cut", "-d", " ", "-f", "1"])
+            resource_hash = cls.__docker_run(
                 cmd=cmd,
-                workspace=workspace,
+                workspace=final_dir,
             )
-            resource_hash = f"sha256:{sha256_file(download_path)}"
+            resource_hash = f"sha256:{resource_hash}"
         
         cls.__event_log.input_resource_event(spec, resource_hash)
 
