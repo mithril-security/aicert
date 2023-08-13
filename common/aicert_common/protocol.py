@@ -19,18 +19,30 @@ class GitResource(BaseModel):
 Resource = Annotated[Union[FileResource, GitResource], Field(discriminator="resource_type")]
 
 
-class BuildRequest(BaseModel):
+class Build(BaseModel):
     image: str
     cmdline: str
     inputs: List[Resource]
     outputs: str
 
 
+class Runner(BaseModel):
+    platform: Literal["azure-tpm"]
+    instance_type: str
+    daemon: str
+
+
+class Serve(BaseModel):
+    cmdline: str
+    host_port: int
+    container_port: int
+
+
 class ConfigFile(BaseModel):
     version: str
-    cloud: Literal["azure"]
-    machine: str
-    build: BuildRequest
+    runner: Optional[Runner]
+    build: Build
+    serve: Optional[Serve]
 
 
 class FileList(BaseModel):

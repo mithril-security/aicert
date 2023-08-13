@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import HTTPException
 import hashlib
 import docker
@@ -7,7 +6,7 @@ from pathlib import Path
 from threading import Lock, Thread
 from typing import Union, Dict, Any, Optional
 
-from aicert_common.protocol import Resource, BuildRequest
+from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
 from .event_log import EventLog
 
@@ -35,15 +34,20 @@ class Builder:
     __exception: Optional[HTTPException] = None
     __resolved_images: Dict[str, Any] = {}
 
+    __serve_thread_lock = Lock()
+    __serve_ready = False
+    __serve_image: Optional[str] = None
+    __serve_thread: Optional[Thread] = None
+
     @classmethod
-    def __register_build_request(cls, build_request: BuildRequest) -> None:
+    def __register_build_request(cls, build_request: Build) -> None:
         cls.__event_log.build_request_event(build_request)
 
     @classmethod
     def __docker_run(
         cls,
         cmd: Union[str, CmdLine],
-        workspace: Union[str, Path, str],
+        workspace: Union[str, Path],
         image: str = BASE_IMAGE,
     ) -> str:
         if not image in cls.__resolved_images:
@@ -143,12 +147,7 @@ class Builder:
         cls.__event_log.outputs_event(outputs)
 
     @classmethod
-    def get_attestation(cls) -> Dict[str, Any]:
-        with cls.__event_log_lock:
-            return cls.__event_log.attest()
-
-    @classmethod
-    def build(cls, build_request: BuildRequest, workspace: Path) -> None:
+    def __build_fn(cls, build_request: Build, workspace: Path) -> None:
         try:
             with cls.__event_log_lock:
                 cls.__register_build_request(build_request)
@@ -164,22 +163,52 @@ class Builder:
                 )
 
                 cls.__register_outputs(build_request.outputs, workspace)
+
+            with cls.__serve_thread_lock:
+                cls.__serve_ready = True
+                cls.__serve_image = build_request.image
+
         except HTTPException as e:
             cls.__exception = e
         except Exception as e:
             print(f"ERROR: {e}")
             cls.__exception = HTTPException(status_code=500, detail=str(e))
+    
+    @classmethod
+    def __serve_fn(cls, serve_request: Serve, workspace: Path) -> None:
+        docker_client.containers.run(
+            cls.__resolved_images[cls.__serve_image],
+            serve_request.cmdline,
+            volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
+            working_dir="/mnt",
+            ports={f'{serve_request.container_port}/tcp': serve_request.host_port}
+        )
+    
+    @classmethod
+    def get_attestation(cls) -> Dict[str, Any]:
+        with cls.__event_log_lock:
+            return cls.__event_log.attest()
 
     @classmethod
-    def submit_build(cls, build_request: BuildRequest, workspace: Path) -> None:
+    def submit_build(cls, build_request: Build, workspace: Path) -> None:
         with cls.__thread_lock:
             if cls.__used:
                 raise HTTPException(
                     status_code=409, detail=f"Cannot build more than once"
                 )
             cls.__used = True
-            cls.__thread = Thread(target=lambda: cls.build(build_request, workspace))
+            cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace))
             cls.__thread.start()
+    
+    @classmethod
+    def submit_serve(cls, serve_request: Serve, workspace: Path) -> None:
+        with cls.__serve_thread_lock:
+            if not cls.__serve_ready:
+                raise HTTPException(
+                    status_code=409, detail=f"Cannot serve before a build has been completed"
+                )
+            cls.__serve_thread = Thread(target=lambda: cls.__serve_fn(serve_request, workspace))
+            cls.__serve_thread.start()
 
     @classmethod
     def poll_build(cls) -> bool:
