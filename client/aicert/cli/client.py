@@ -1,20 +1,21 @@
-import tempfile
+from contextlib import contextmanager
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 import json
 from pathlib import Path
 import pkgutil
 import requests
-import shutil
 import subprocess
 import sys
+import tempfile
 from time import sleep
 import typer
 from typing import List, Optional
 import urllib.parse
 import yaml
+import warnings
 
-from aicert_common.protocol import ConfigFile, FileList
+from aicert_common.protocol import ConfigFile, FileList, Runner, Build, Serve
 from .logging import log
 from .requests_adapter import ForcedIPHTTPSAdapter
 from .verify import (
@@ -26,22 +27,86 @@ from .verify import (
 )
 
 
+class AICertClientException(Exception):
+    def __init__(self, message: str, *args: object) -> None:
+        self.message = message
+        super().__init__(self.message, *args)
+
+
+class AICertClientSubProcessException(AICertClientException):
+    def __init__(self, command: str, retcode: int, stdout: str, stderr: str) -> None:
+        self.__command = command
+        self.__retcode = retcode
+        self.__stdout = stdout
+        self.__stderr = stderr
+        self.message = f"Command `{self.__command}` terminated with non-zero return code: {self.__retcode}\nstdout: {self.__stdout}\nstderr: {self.__stderr}"
+        super().__init__(self.message)
+
+
+class AICertClientConfigFileException(AICertClientException):
+    def __init__(self, err: yaml.YAMLError) -> None:
+        self.__err = err
+        self.__err.context_mark.name = "aicert.yaml"
+        self.__err.problem_mark.name = "aicert.yaml"
+        self.message = f"Failed to parse aicert.yaml file\n{self.__err}"
+        super().__init__(self.message)
+
+
+class AICertClientHTTPException(AICertClientException):
+    def __init__(self, message: str, response: requests.Response) -> None:
+        self.__res = response
+        self.message = f"Protocol error: {message}\nReceived HTTP response: {response.status_code} - {response.reason}\n{response.text}"
+        super().__init__(self.message)
+
+
+class AICertClientInvalidAttestationFormatException(AICertClientException):
+    def __init__(self, err: Exception) -> None:
+        self.__err = err
+        self.message = f"Invalid attestation format\n{self.__err}"
+        super().__init__(self.message)
+
+
+class AICertClientInvalidAttestationException(AICertClientException):
+    pass
+
+
+@contextmanager
+def log_errors_and_warnings():
+    try:
+        yield None
+    except AICertClientException as e:
+        log.error(f"{e.message}")
+        raise typer.Exit(code=1)
+    finally:
+        with warnings.catch_warnings(record=True) as ws:
+            for w in ws:
+                log.warning(w.message)
+
+
 class Client:
     def __init__(
         self,
         cfg: Optional[ConfigFile] = None,
-        interactive: bool = True,
-        auto_approve: bool = True,
+        interactive: bool = False,
         simulation_mode: bool = False,
     ) -> None:
         self.__cfg: Optional[ConfigFile] = cfg
-        self.__tf_available: Optional[bool] = None
         self.__interactive = interactive
-        self.__auto_approve = auto_approve
         self.__simulation_mode = simulation_mode
+        self.__base_url = "http://localhost:8000"
+        self.__session = requests.Session()
 
         if self.__simulation_mode:
-            log.warning("Running in simulation mode")
+            warnings.warn("Running in simulation mode", RuntimeWarning)
+    
+    @property
+    def daemon_address(self) -> str:
+        return self.__cfg.runner.daemon if self.__cfg.runner is not None else ""
+        
+
+    @property
+    def requires_serve(self) -> str:
+        return not self.__cfg.serve is None
 
     def __copy_template(
         self,
@@ -80,64 +145,16 @@ class Client:
         if executable:
             dst_path.chmod(0o775)
 
-    def __assert_tf_available(self):
-        if self.__tf_available is None:
-            # Check if the terraform binary is installed
-            try:
-                res = subprocess.run(
-                    ["terraform", "--version"],
-                    capture_output=True,
-                    text=True,
-                )
-                self.__tf_available = res.returncode == 0
-            except FileNotFoundError:
-                self.__tf_available = False
-
-        if not self.__tf_available:
-            log.error(
-                "Terraform CLI was not found in PATH. Follow the instructions at [underline]https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[/]."
-            )
-            raise typer.Exit(code=1)
-
-    def __tf_init(self, dir: Path):
-        self.__assert_tf_available()
-
-        if not (dir / ".terraform").exists():
-            self.__run_subprocess(["terraform", "init"], dir=dir)
-
-    def __tf_apply(self, dir: Path, vars: dict = {}):
-        self.__assert_tf_available()
-
-        args = ["terraform", "apply"]
-        if not self.__interactive or self.__auto_approve:
-            args += ["-auto-approve"]
-        for k, v in vars.items():
-            args += ["--var", f"{k}={v}"]
-
-        self.__run_subprocess(args, dir=dir)
-
-    def __tf_destroy(self, dir: Path, vars: dict = {}):
-        self.__assert_tf_available()
-
-        args = ["terraform", "destroy"]
-        if not self.__interactive or self.__auto_approve:
-            args += ["-auto-approve"]
-        for k, v in vars.items():
-            args += ["--var", f"{k}={v}"]
-
-        self.__run_subprocess(args, dir=dir)
-
     def __run_subprocess(
         self,
         command: List[str],
         cwd: Optional[Path] = None,
         text: bool = False,
-        return_stdout: bool = False,
-        quiet: bool = False,
+        verbose: bool = False,
         assert_returncode: bool = True,
-    ) -> Optional[str]:
+    ) -> str:
         human_readable_command = " ".join(command)
-        if not quiet:
+        if verbose:
             log.info(f"Running `{human_readable_command}`...")
 
         try:
@@ -145,34 +162,28 @@ class Client:
                 command,
                 cwd=str(cwd.absolute()),
                 stdin=sys.stdin,
-                capture_output=return_stdout,
+                capture_output=True,
                 text=text,
             )
         except KeyboardInterrupt:
             exit(1)
 
         if assert_returncode and res.returncode != 0:
-            if return_stdout:
-                log.info(f"stdout: {res.stdout}")
-                log.info(f"stderr: {res.stderr}")
-            log.error(
-                f"Command `{human_readable_command}` terminated with non-zero return code: {res.returncode}"
+            raise AICertClientSubProcessException(
+                human_readable_command,
+                res.returncode,
+                res.stdout,
+                res.stderr
             )
-            exit(1)
 
-        if return_stdout:
-            return res.stdout
+        return res.stdout
 
     def __load_config(self, dir: Path):
         with (dir / "aicert.yaml").open("rb") as file:
             try:
                 data = yaml.safe_load(file)
             except yaml.YAMLError as e:
-                e.context_mark.name = "aicert.yaml"
-                e.problem_mark.name = "aicert.yaml"
-                log.error(f"Failed to parse aicert.yaml file")
-                log.error(f"{e}")
-                raise typer.Exit(code=1)
+                raise AICertClientConfigFileException(e)
 
         self.__cfg = ConfigFile(**data)
 
@@ -183,147 +194,137 @@ class Client:
     @staticmethod
     def from_config_file(
         dir: Path,
-        interactive: bool = True,
-        auto_approve: bool = False,
+        interactive: bool = False,
         simulation_mode=False,
     ) -> "Client":
         client = Client(
             interactive=interactive,
-            auto_approve=auto_approve,
             simulation_mode=simulation_mode,
         )
         client.__load_config(dir)
 
         return client
-
-    def new_cmd(self, dir: Path) -> None:
-        """Set up the workspace by copying template files"""
-        dir.mkdir(exist_ok=True)
-        self.__copy_template(
-            "templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True
-        )
-
-        log.info("AICert project has been initialized.")
-
-    def build_cmd(self, dir: Path, control_plane_url: str) -> None:
-        """Run the actual build on a server
-        - copy terraform templates to ~/.aicert
-        - run terraform init on ~/.aicert
-        - run terraform apply on ~/.aicert
-        - send a request to the server
-        - save outputs to a file (attestation and artifacts)
-        - run terraform destroy on ~/.aicert
-        """
+    
+    def connect(self, runner_cfg: Optional[Runner] = None) -> None:
         if not self.__simulation_mode:
-            log.info("Launching the runner...")
-            r = requests.post(f"{control_plane_url}/launch_runner")
-            log.info("Runner is ready.")
-            r.raise_for_status()
-            r = r.json()
+            runner_cfg = runner_cfg if runner_cfg is not None else self.__cfg.runner
+            if runner_cfg is None:
+                raise AICertClientException("No runner has been configured")
+            
+            res = requests.post(f"{runner_cfg.daemon}/launch_runner")
+            raise_for_status(res, "Cannot create runner")
+            res = res.json()
 
-            base_url = "https://aicert_worker"
+            self.__base_url = "https://aicert_worker"
 
-            session = requests.Session()
-            session.mount(
-                "https://aicert_worker", ForcedIPHTTPSAdapter(dest_ip=r["runner_ip"])
+            self.__session = requests.Session()
+            self.__session.mount(
+                self.__base_url, ForcedIPHTTPSAdapter(dest_ip=res["runner_ip"])
             )
 
             client_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
             client_key_file = tempfile.NamedTemporaryFile(mode="w+t")
             server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
 
-            client_crt_file.write(r["client_cert"])
+            client_crt_file.write(res["client_cert"])
             client_crt_file.flush()
-            client_key_file.write(r["client_private_key"])
+            client_key_file.write(res["client_private_key"])
             client_key_file.flush()
-            server_ca_crt_file.write(r["server_ca_cert"])
+            server_ca_crt_file.write(res["server_ca_cert"])
             server_ca_crt_file.flush()
 
-            session.verify = server_ca_crt_file.name
-            session.cert = (client_crt_file.name, client_key_file.name)
+            self.__session.verify = server_ca_crt_file.name
+            self.__session.cert = (client_crt_file.name, client_key_file.name)
         else:
-            base_url = "http://localhost:8000"
-            session = requests.Session()
+            self.__base_url = "http://localhost:8000"
+            self.__session = requests.Session()
+            warnings.warn("Ignoring machine settings in simulation mode")
+    
+    def disconnect(self):
+        if not self.__simulation_mode:
+            raise_for_status(requests.post("http://localhost:8082/destroy_runner"), "Cannot destroy runner")
+            self.__base_url = "http://localhost:8000"
+            self.__session = requests.Session()
 
-        # Submit build request
-        log.info("Submitting build request")
-        log_and_exit_for_status(
-            session.post(
-                f"{base_url}/submit",
-                data=self.__cfg.build.json(),
+    def submit_build(self, build_cfg: Optional[Build] = None) -> None:
+        build_cfg = build_cfg if build_cfg is not None else self.__cfg.build
+        raise_for_status(
+            self.__session.post(
+                f"{self.__base_url}/submit_build",
+                data=build_cfg.json(),
                 headers={"Content-Type": "application/json"},
             ),
             "Cannot submit build to server",
         )
-
-        # Wait until attestation is available
+    
+    def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
+        serve_cfg = serve_cfg if serve_cfg is not None else self.__cfg.serve
+        if serve_cfg is not None:
+            raise_for_status(
+                self.__session.post(
+                    f"{self.__base_url}/submit_serve",
+                    data=serve_cfg.json(),
+                    headers={"Content-Type": "application/json"},
+                ),
+                "Cannot submit serve request to server",
+            )
+    
+    def wait_for_attestation(self) -> bytes:
         while True:
-            res = session.get(f"{base_url}/attestation")
+            res = self.__session.get(f"{self.__base_url}/attestation")
             if res.status_code == 204:
                 sleep(1)
                 continue
-            log_and_exit_for_status(
+            raise_for_status(
                 res, "Cannot retrieve attestation, build likely failed"
             )
-
-            with (dir / "attestation.json").open("wb") as f:
-                f.write(res.content)
-            break
-        log.info("Attestation received")
-
-        # Download output files
-        pattern = urllib.parse.quote(self.__cfg.build.outputs, safe="")
-        res = session.get(f"{base_url}/outputs?pattern={pattern}")
-        log_and_exit_for_status(res, "Cannot download outputs list")
+            return res.content
+    
+    def download_outputs(self, dir: Path, pattern: Optional[str] = None, verbose: bool = False) -> None:
+        pattern = pattern if pattern is not None else self.__cfg.build.outputs
+        pattern = urllib.parse.quote(pattern, safe="")
+        
+        res = self.__session.get(f"{self.__base_url}/outputs?pattern={pattern}")
+        raise_for_status(res, "Cannot download outputs list")
         file_list = FileList.parse_raw(res.text)
 
         for filename in file_list.file_list:
-            log.info(f"Downloading output: {filename}")
-            res = session.get(f"{base_url}/outputs/{filename}")
-            log_and_exit_for_status(res, f"Cannot download output file {filename}")
+            if verbose:
+                log.info(f"Downloading output: {filename}")
+            res = self.__session.get(f"{self.__base_url}/outputs/{filename}")
+            raise_for_status(res, f"Cannot download output file {filename}")
             with (dir / filename).open("wb") as f:
                 f.write(res.content)
 
-        if not self.__simulation_mode:
-            log.info("Destoying runner")
-            requests.post("http://localhost:8082/destroy_runner")
-            log.info("Runner destroyed successfully")
+    def new_config(self, dir: Path) -> None:
+        """Set up the workspace by copying template files"""
+        dir.mkdir(exist_ok=True)
+        self.__copy_template(
+            "templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True
+        )
 
-    def verify_cmd(self, dir: Path) -> None:
-        """Launch verification process
-
-        Example:
-        aicert verify "/workspaces/aicert_dev/server/aicert_server/sample_build_response.json"
-        """
-        with (dir / "attestation.json").open("r") as f:
-            build_response = json.load(f)
-
+    def verify_build_response(self, build_response: bytes, verbose: bool = False):
+        try:
+            build_response = json.loads(build_response)
+        except Exception as e:
+            AICertClientInvalidAttestationFormatException(e)
+        
         if "simulation_mode" in build_response["remote_attestation"]:
             if self.__simulation_mode:
-                typer.secho(
-                    f"👀 Attestation generated in simulation mode",
-                    fg=typer.colors.YELLOW,
-                )
-                typer.secho(f"✨✨✨ ALL CHECKED PASSED", fg=typer.colors.GREEN)
+                warnings.warn(f"👀 Attestation generated in simulation mode", RuntimeWarning)
+                return
             else:
-                typer.secho(
-                    f"❌ Attestation generated in simulation mode", fg=typer.colors.RED
-                )
-                typer.secho(f"💀 INVALID ATTESTATION", fg=typer.colors.RED)
-            return
+                raise AICertClientInvalidAttestationException(f"❌ Attestation generated in simulation mode")
 
         build_response["remote_attestation"]["cert_chain"] = [
             decode_b64_encoding(cert_b64_encoded)
             for cert_b64_encoded in build_response["remote_attestation"]["cert_chain"]
         ]
 
-        typer.secho(f"⚠️ Bypassing certificate chain verification", fg=typer.colors.YELLOW)
-
         ak_cert = verify_ak_cert(
             cert_chain=build_response["remote_attestation"]["cert_chain"]
         )
-
-        # typer.secho(f"✅ Valid certificate chain", fg=typer.colors.GREEN)
+        warnings.warn(f"⚠️ Bypassing certificate chain verification", RuntimeWarning)
 
         ak_cert_ = load_der_x509_certificate(ak_cert)
         ak_pub_key = ak_cert_.public_key()
@@ -340,11 +341,12 @@ class Client:
             build_response["remote_attestation"]["quote"], ak_pub_key_pem
         )
 
-        typer.secho(f"✅ Valid quote", fg=typer.colors.GREEN)
+        if verbose:
+            typer.secho(f"✅ Valid quote", fg=typer.colors.GREEN)
 
-        log.info(
-            f"Attestation Document > PCRs :  \n{yaml.safe_dump(att_document['pcrs']['sha256'])}"
-        )
+            log.info(
+                f"Attestation Document > PCRs :  \n{yaml.safe_dump(att_document['pcrs']['sha256'])}"
+            )
 
         # We should check the PCR to make sure the system has booted properly
         # This is an example ... the real thing will depend on the system.
@@ -373,7 +375,8 @@ class Client:
         #     == "d36183a4ce9f539d686160695040237da50e4ad80600607f84eff41cf394dcd8"
         # )
 
-        # typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
+        # if verbose:
+        #     typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
 
         # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
         # But because it is resettable it MUST NOT be used in practice.
@@ -384,16 +387,11 @@ class Client:
             att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
         )
 
-        typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
+        if verbose:
+            typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
+            print(yaml.safe_dump(event_log))
+            typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
 
-        print(yaml.safe_dump(event_log))
-
-        typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
-
-
-def log_and_exit_for_status(res: requests.Response, message: str) -> None:
+def raise_for_status(res: requests.Response, message: str) -> None:
     if not res.ok:
-        log.error(message)
-        log.error(f"{res.status_code} - {res.reason}")
-        log.error(f"{res.text}")
-        raise typer.Exit(code=1)
+        raise AICertClientHTTPException(message=message, response=res)

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
 
-from aicert_common.protocol import BuildRequest, FileList
+from aicert_common.protocol import Build, Serve, FileList
 from .builder import Builder, SIMULATION_MODE
 
 
@@ -36,9 +36,14 @@ def list_outputs(pattern: str) -> FileList:
     )
 
 
-@app.post("/submit", status_code=202)
-def submit(build_request: BuildRequest) -> None:
+@app.post("/submit_build", status_code=202)
+def submit_build(build_request: Build) -> None:
     Builder.submit_build(build_request, WORKSPACE)
+
+
+@app.post("/submit_serve", status_code=202)
+def submit_serve(serve_request: Serve) -> None:
+    Builder.submit_serve(serve_request, WORKSPACE)
 
 
 @app.get("/attestation")

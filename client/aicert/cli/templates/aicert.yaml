@@ -1,6 +1,4 @@
-version: "0.1.0"
-cloud: azure
-machine: local
+version: 0.1.0
 build:
   image: "debian:bullseye"
   cmdline: |

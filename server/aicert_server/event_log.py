@@ -2,7 +2,7 @@ import hashlib
 import json
 from typing import Dict, Any, List, Tuple
 
-from aicert_common.protocol import Resource, BuildRequest
+from aicert_common.protocol import Resource, Build
 from .tpm import quote, cert_chain, tpm_extend_pcr, PCR_FOR_MEASUREMENT
 
 
@@ -36,7 +36,7 @@ class EventLog:
             tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
         self.__event_log.append(event_json)
 
-    def build_request_event(self, build_request: BuildRequest) -> None:
+    def build_request_event(self, build_request: Build) -> None:
         self.__append(
             {
                 "event_type": "build_request",
