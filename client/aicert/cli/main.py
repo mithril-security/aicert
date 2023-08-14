@@ -1,10 +1,37 @@
+"""AICert CLI
+
+CLI tool for certified builds and deployments
+
+Typical workflow:
+1. use new subcommand to set up a configuration
+2. modify the configuration to suit your needs
+3. use build subcommand to run the build on an
+   aicert runner and get back your build
+   artifacts and an attestation
+4. if your configuration file specifies a serve
+   section, the correponding server (whose code
+   is now attested) will be launched by the runner
+5. verify the attestation
+
+AICert can be run:
+- either locally in simulation mode, in which case
+  youn need no daemon but a running instance of the
+  aicert server (use the aicert-server package)
+- either on Azure CVMs, in which case you need to setup
+  a local daemon to interact with Azure
+  (use the aicert-daemon package)
+
+See the aicert-common package for more on the configuration file.
+"""
+
 import os
 from pathlib import Path
 import typer
 from typing import Annotated
 
 from .client import Client, log_errors_and_warnings
-from .logging import log
+from aicert_common.logging import log
+from aicert_common.errors import log_errors_and_warnings
 
 
 SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
@@ -37,6 +64,8 @@ def build(
     - wait for the build to complete and retreive the attestation
     - download build outputs
     - destroy the runner by sending a request to the daemon
+
+    (See aicert.cli.Client)
     """
     with log_errors_and_warnings():
         client = Client.from_config_file(
@@ -62,9 +91,8 @@ def build(
         if client.requires_serve:
             client.submit_serve()
             log.info(f"Deployment running")
-
-        # TODO: do not kill instance if it serves something...
-        client.disconnect()
+        else:
+            client.disconnect()
 
 
 @app.command()

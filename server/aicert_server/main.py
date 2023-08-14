@@ -1,5 +1,16 @@
 #!/usr/bin/python3
 
+"""Defines the FastAPI server that runs in the AICert Runners
+
+Endpoints:
+    GET /outputs?pattern=...: get the list of all output files matching the given glob pattern
+    GET /outputs/filename: download an output file
+    POST /submit_build [body: Build]: start the build with given specs (see aicert-common's protocol for the request specs)
+    POST /submit_server [body: Serve]: start serving according to given specs (see aicert-common's protocol for the request specs)
+        Available only if the build has completed.
+    GET /attestation: returns 204 if the build has not completed and the attesation (event log, quote and certificate chain) otherwise
+"""
+
 import base64
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder

@@ -1,22 +1,20 @@
-from contextlib import contextmanager
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 import json
 from pathlib import Path
 import pkgutil
 import requests
-import subprocess
-import sys
 import tempfile
 from time import sleep
 import typer
-from typing import List, Optional
+from typing import Optional
 import urllib.parse
 import yaml
 import warnings
 
 from aicert_common.protocol import ConfigFile, FileList, Runner, Build, Serve
-from .logging import log
+from aicert_common.logging import log
+from aicert_common.errors import AICertException
 from .requests_adapter import ForcedIPHTTPSAdapter
 from .verify import (
     PCR_FOR_MEASUREMENT,
@@ -27,23 +25,8 @@ from .verify import (
 )
 
 
-class AICertClientException(Exception):
-    def __init__(self, message: str, *args: object) -> None:
-        self.message = message
-        super().__init__(self.message, *args)
-
-
-class AICertClientSubProcessException(AICertClientException):
-    def __init__(self, command: str, retcode: int, stdout: str, stderr: str) -> None:
-        self.__command = command
-        self.__retcode = retcode
-        self.__stdout = stdout
-        self.__stderr = stderr
-        self.message = f"Command `{self.__command}` terminated with non-zero return code: {self.__retcode}\nstdout: {self.__stdout}\nstderr: {self.__stderr}"
-        super().__init__(self.message)
-
-
-class AICertClientConfigFileException(AICertClientException):
+class AICertConfigFileException(AICertException):
+    """AICert config file parsing error (yaml)"""
     def __init__(self, err: yaml.YAMLError) -> None:
         self.__err = err
         self.__err.context_mark.name = "aicert.yaml"
@@ -52,38 +35,46 @@ class AICertClientConfigFileException(AICertClientException):
         super().__init__(self.message)
 
 
-class AICertClientHTTPException(AICertClientException):
+class AICertHTTPException(AICertException):
+    """AICert HTTP protocol exception"""
     def __init__(self, message: str, response: requests.Response) -> None:
         self.__res = response
         self.message = f"Protocol error: {message}\nReceived HTTP response: {response.status_code} - {response.reason}\n{response.text}"
         super().__init__(self.message)
 
 
-class AICertClientInvalidAttestationFormatException(AICertClientException):
+class AICertInvalidAttestationFormatException(AICertException):
+    """AICert attestation parsing error (json)"""
     def __init__(self, err: Exception) -> None:
         self.__err = err
         self.message = f"Invalid attestation format\n{self.__err}"
         super().__init__(self.message)
 
 
-class AICertClientInvalidAttestationException(AICertClientException):
+class AICertInvalidAttestationException(AICertException):
+    """Invalid attestation error"""
     pass
 
 
-@contextmanager
-def log_errors_and_warnings():
-    try:
-        yield None
-    except AICertClientException as e:
-        log.error(f"{e.message}")
-        raise typer.Exit(code=1)
-    finally:
-        with warnings.catch_warnings(record=True) as ws:
-            for w in ws:
-                log.warning(w.message)
-
-
 class Client:
+    """Python API to communicate with an AICert runner.
+    
+    This class contains methods that cover the main steps of
+    a certified build or server deployment.
+    These methods are built upon the HTTP interface defined in the server code.
+
+    Args:
+        cfg: (ConfigFile, optional): Parsed Yaml configuration file.
+            The configuration file contains runner settings and build and
+            server deployment descriptions. These are used as deafults that
+            can be overriden when calling the methods.
+        interactive (bool, default = False): When set to True, enables the
+            client to ask question such as file replacement approbation.
+        simulation_mode (bool, default = False): When set to True, the client
+            connects to a local server on port 8000 (currently this simulation
+            server must be launched separately using the aicert-server package)
+            that does not use the TPM. Useful for testing purposes only.
+    """
     def __init__(
         self,
         cfg: Optional[ConfigFile] = None,
@@ -101,11 +92,13 @@ class Client:
     
     @property
     def daemon_address(self) -> str:
+        """Address of the configured deamon if available"""
         return self.__cfg.runner.daemon if self.__cfg.runner is not None else ""
         
 
     @property
-    def requires_serve(self) -> str:
+    def requires_serve(self) -> bool:
+        """True if the configuration file has a serve section"""
         return not self.__cfg.serve is None
 
     def __copy_template(
@@ -117,6 +110,20 @@ class Client:
         confirm_replace: bool = False,
         merge: bool = False,
     ):
+        """Private method: copy package files (e.g. templates) to current dir
+        
+        Args:
+            src_path (str): Location of the template file in the package, relative to its root
+            dst_path (Path): Where to copy the file
+            executable (bool, default = False): Whether to make the copy excecutable
+            replace (bool, default = False): If set to True, ignore existing file
+                and replace it with a copy of the template. If set to false, do nothing
+                if the file already exists.
+            confirm_replace (bool, default = False): If set to True and in iteractive mode only,
+                the client will ask approbation prior to replacing the file.
+            replace (bool, default = False): If set to True, the client will append the content
+                of the template at the end of the target file instead of replacing it.
+        """
         data = pkgutil.get_data(__name__, src_path)
 
         if dst_path.exists():
@@ -124,7 +131,7 @@ class Client:
                 replace = (
                     typer.confirm(f"Replace file {dst_path}?")
                     if self.__interactive
-                    else True
+                    else replace
                 )
 
             if not replace and not merge:
@@ -145,49 +152,26 @@ class Client:
         if executable:
             dst_path.chmod(0o775)
 
-    def __run_subprocess(
-        self,
-        command: List[str],
-        cwd: Optional[Path] = None,
-        text: bool = False,
-        verbose: bool = False,
-        assert_returncode: bool = True,
-    ) -> str:
-        human_readable_command = " ".join(command)
-        if verbose:
-            log.info(f"Running `{human_readable_command}`...")
-
-        try:
-            res = subprocess.run(
-                command,
-                cwd=str(cwd.absolute()),
-                stdin=sys.stdin,
-                capture_output=True,
-                text=text,
-            )
-        except KeyboardInterrupt:
-            exit(1)
-
-        if assert_returncode and res.returncode != 0:
-            raise AICertClientSubProcessException(
-                human_readable_command,
-                res.returncode,
-                res.stdout,
-                res.stderr
-            )
-
-        return res.stdout
-
     def __load_config(self, dir: Path):
+        """Private method: load config file
+        
+        Args:
+            dir (Path): Directory that contains the aicert.yaml file
+        """
         with (dir / "aicert.yaml").open("rb") as file:
             try:
                 data = yaml.safe_load(file)
             except yaml.YAMLError as e:
-                raise AICertClientConfigFileException(e)
+                raise AICertConfigFileException(e)
 
         self.__cfg = ConfigFile(**data)
 
     def __save_config(self, dir: Path):
+        """Private method: save config file
+        
+        Args:
+            dir (Path): Directory where the aicert.yaml config file should be stored
+        """
         with (dir / "aicert.yaml").open("wb") as file:
             yaml.safe_dump(dict(self.__cfg), file)
 
@@ -197,6 +181,20 @@ class Client:
         interactive: bool = False,
         simulation_mode=False,
     ) -> "Client":
+        """Load configuration from config file and returned a preconfigured client
+    
+        Args:
+            dir: (Path): Directory that contains the aicert.yaml file
+            interactive (bool, default = False): When set to True, enables the
+                client to ask question such as file replacement approbation.
+            simulation_mode (bool, default = False): When set to True, the client
+                connects to a local server on port 8000 (currently this simulation
+                server must be launched separately using the aicert-server package)
+                that does not use the TPM. Useful for testing purposes only.
+        
+        Returns:
+            Client
+        """
         client = Client(
             interactive=interactive,
             simulation_mode=simulation_mode,
@@ -206,10 +204,20 @@ class Client:
         return client
     
     def connect(self, runner_cfg: Optional[Runner] = None) -> None:
+        """Establish a TLS connection with the runner.
+
+        1. The client contacts the configured daemon to ask for a runner.
+        2. The daemon returns an ip address and an SSL client certificate for the runner.
+        3. The client connects to the runner using the ip and certificate.
+
+        Args:
+            runner_cfg (Runner, optional): Runner configuration object. If not provided,
+                the client defaults to using the runner section of the config file.
+        """
         if not self.__simulation_mode:
             runner_cfg = runner_cfg if runner_cfg is not None else self.__cfg.runner
             if runner_cfg is None:
-                raise AICertClientException("No runner has been configured")
+                raise AICertException("No runner has been configured")
             
             res = requests.post(f"{runner_cfg.daemon}/launch_runner")
             raise_for_status(res, "Cannot create runner")
@@ -241,12 +249,22 @@ class Client:
             warnings.warn("Ignoring machine settings in simulation mode")
     
     def disconnect(self):
+        """Close connection with the runner.
+
+        The client asks the daemon to destroy the runner.
+        """
         if not self.__simulation_mode:
             raise_for_status(requests.post("http://localhost:8082/destroy_runner"), "Cannot destroy runner")
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
 
     def submit_build(self, build_cfg: Optional[Build] = None) -> None:
+        """Send a submit_build request to the runner
+
+        Args:
+            build_cfg (Build, optional): Build configuration object. If not provided,
+                the client defaults to using the build section of the config file.
+        """
         build_cfg = build_cfg if build_cfg is not None else self.__cfg.build
         raise_for_status(
             self.__session.post(
@@ -258,6 +276,12 @@ class Client:
         )
     
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
+        """Send a submit_serve request to the runner
+
+        Args:
+            serve_cfg (Serve, optional): Serve configuration object. If not provided,
+                the client defaults to using the serve section of the config file.
+        """
         serve_cfg = serve_cfg if serve_cfg is not None else self.__cfg.serve
         if serve_cfg is not None:
             raise_for_status(
@@ -270,6 +294,12 @@ class Client:
             )
     
     def wait_for_attestation(self) -> bytes:
+        """Block until the attestation endpoint returns the attestation
+        
+        The client will repededly poll the runner. The runner anwers with
+        a 204 response while the build is still running. Once it has completed,
+        it simply returns the attestation.
+        """
         while True:
             res = self.__session.get(f"{self.__base_url}/attestation")
             if res.status_code == 204:
@@ -281,6 +311,15 @@ class Client:
             return res.content
     
     def download_outputs(self, dir: Path, pattern: Optional[str] = None, verbose: bool = False) -> None:
+        """Retrieve outputs (build artifacts) using a glob pattern
+        
+        Args:
+            dir (Path): Where to store the downloaded files
+            pattern (str, optinal): Glob pattern to filter the artifacts. If not provided,
+                the client defaults to using the pattern defined in the config file.
+            verbose (bool, default = False): Whether to display information about the downloads
+                in stdout.
+        """
         pattern = pattern if pattern is not None else self.__cfg.build.outputs
         pattern = urllib.parse.quote(pattern, safe="")
         
@@ -297,24 +336,41 @@ class Client:
                 f.write(res.content)
 
     def new_config(self, dir: Path) -> None:
-        """Set up the workspace by copying template files"""
+        """Set up the workspace by copying template files
+        
+        Args:
+            dir (Path): Path of the workspace to set up
+        """
         dir.mkdir(exist_ok=True)
         self.__copy_template(
             "templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True
         )
 
     def verify_build_response(self, build_response: bytes, verbose: bool = False):
+        """Verify received attesation validity
+
+        1. Parse the JSON reponse
+        2. Check simulation mode
+        3. Verify certificate chain
+        4. Verify quote signature
+        5. Verify boot PCRs (firmware, bootloader, initramfs, OS)
+        6. Verify event log (final hash in PCR_FOR_MEASUREMENT) by replaying it (works like a chain of hashes)
+        
+        Args:
+            build_response (bytes): reponse of the attestation endpoint
+            verbose (bool, default = False): whether to print verification information in stdout
+        """
         try:
             build_response = json.loads(build_response)
         except Exception as e:
-            AICertClientInvalidAttestationFormatException(e)
+            AICertInvalidAttestationFormatException(e)
         
         if "simulation_mode" in build_response["remote_attestation"]:
             if self.__simulation_mode:
                 warnings.warn(f"👀 Attestation generated in simulation mode", RuntimeWarning)
                 return
             else:
-                raise AICertClientInvalidAttestationException(f"❌ Attestation generated in simulation mode")
+                raise AICertInvalidAttestationException(f"❌ Attestation generated in simulation mode")
 
         build_response["remote_attestation"]["cert_chain"] = [
             decode_b64_encoding(cert_b64_encoded)
@@ -393,5 +449,11 @@ class Client:
             typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
 
 def raise_for_status(res: requests.Response, message: str) -> None:
+    """Raise AICertHTTPException if passed response has a status code outside the 200 range
+    
+    Args:
+        res (requests.Response): response to check
+        message (str): message to include in the error
+    """
     if not res.ok:
-        raise AICertClientHTTPException(message=message, response=res)
+        raise AICertHTTPException(message=message, response=res)

@@ -17,6 +17,7 @@ SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
 
 
 def sha256_file(file_path) -> str:
+    """Returns the SHA256 hash of a file"""
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as file:
         for chunk in iter(lambda: file.read(4096), b""):
@@ -25,6 +26,33 @@ def sha256_file(file_path) -> str:
 
 
 class Builder:
+    """AICert Builder Interface
+    
+    As a build can be only be run once on an AICert Runner,
+    this class provides only class attributes and class methods.
+
+    Class attributes:
+        __thread_lock (Lock): Lock that controls shared access to the `__used`
+            and `__thread` attributes
+        __used (bool): Whether a run has already been done
+        __thread (Optional[Thread]): Thread that runs the build
+
+        __event_log_lock (Lock): Lock that controls shared access to the
+            `__event_log`, `__exception` and `__resolved_images` attributes
+        __event_log (EventLog): Event log that contains all measurements
+        __exception (Optional[HTTPException]): May contain an exception
+            originating from the build thrad if it failed
+        __resolved_images (Dict[str, Any]): Maps image names with already
+            downloaded and measured images
+
+        __serve_thread_lock (Lock): Lock that controls shared access to the
+            `__serve_ready`, `__serve_image` and `__serve_thread` attributes
+        __serve_ready (bool): whether the server is ready to be started
+            (i.e. after the build has completed)
+        __serve_image (Optional[str]): resolved image to use to launch the server
+            (same as the one used for build)
+        __serve_thread (Optional[Thread]): Thread that runs the server
+    """
     __thread_lock = Lock()
     __used = False
     __thread: Optional[Thread] = None
@@ -41,6 +69,11 @@ class Builder:
 
     @classmethod
     def __register_build_request(cls, build_request: Build) -> None:
+        """Private method: add a build request to the event log
+        
+        Args:
+            build_request (Build): build request to measure
+        """
         cls.__event_log.build_request_event(build_request)
 
     @classmethod
@@ -50,6 +83,21 @@ class Builder:
         workspace: Union[str, Path],
         image: str = BASE_IMAGE,
     ) -> str:
+        """Private method: run command in a docker container, return stdout
+
+        If the requested image has not been downloaded and measured
+        yet, this method handles it and add an entry to the `__resolved images`
+        attribute.
+        
+        Args:
+            cmd (Union[str, CmdLine]): command to run
+            workspace (Union[str, Path]): host directory to mount at /mnt
+                on the container
+            image (str): name of the image to use for the run
+        
+        Returns:
+            str
+        """
         if not image in cls.__resolved_images:
             resolved_image = (
                 docker_client.images.get(image.split("/")[-1])
@@ -73,6 +121,22 @@ class Builder:
 
     @classmethod
     def __fetch_resource(cls, spec: Resource, workspace: Path) -> None:
+        """Private method: download a build resource and install it in the host's workspace
+
+        Git repositories are cloned and checked out (to use the right branch) to the host's
+        workspace using a docker run. If a package manager is specified, its lock file is
+        generated/checked and measured.
+
+        Files and archives are downloaded, uncompressed and extracted to the host's
+        workspace using a docker run.
+
+        All docker run commands use the AICert base image that is built upon alpine
+        and that contains a minimal set of tools (git, curl, gzip, tar, etc.)
+        
+        Args:
+            spec (Resource): specification of the resource (see aicert-common's protocol)
+            workspace (Union[str, Path]): host's working directory
+        """
         path = Path(spec.path)
         if path.is_absolute():
             raise HTTPException(
@@ -133,6 +197,13 @@ class Builder:
 
     @classmethod
     def __register_outputs(cls, ouput_pattern: str, workspace: Path) -> None:
+        """Private method: add hashes of output files to the event log
+        
+        Args:
+            output_pattern (str): glob pattern to select output files from
+                the workspace
+            workspace (Path)
+        """
         matches = list(workspace.glob(ouput_pattern))
         outputs = [
             (str(path.relative_to(workspace)), sha256_file(path))
@@ -148,6 +219,18 @@ class Builder:
 
     @classmethod
     def __build_fn(cls, build_request: Build, workspace: Path) -> None:
+        """Private method: implements the build process, run by the build thread
+
+        1. Add build request to the event log
+        2. Fetch all resources (download and measure)
+        3. Run the build in a docker container using specified image
+        4. List and add the hashes of the output files to the event log
+        
+        Args:
+            build_request (Build): build spec (see aicert-common's protocol)
+            workspace (Path): directory to mount at /mnt on every containers
+                used during the build, this will contain the outputs
+        """
         try:
             with cls.__event_log_lock:
                 cls.__register_build_request(build_request)
@@ -176,6 +259,13 @@ class Builder:
     
     @classmethod
     def __serve_fn(cls, serve_request: Serve, workspace: Path) -> None:
+        """Private method: implements the serving process, run by the serve thread
+        
+        Args:
+            serve_request (Serve): serve spec (see aicert-common's protocol)
+            workspace (Path): directory to mount at /mnt on the container and
+                that contains the result of the build
+        """
         docker_client.containers.run(
             cls.__resolved_images[cls.__serve_image],
             serve_request.cmdline,
@@ -186,11 +276,24 @@ class Builder:
     
     @classmethod
     def get_attestation(cls) -> Dict[str, Any]:
+        """Return the event log and the corresponding TPM measurement
+        
+        Blocks until the event log lock is released (i.e. when the build is over).
+        """
         with cls.__event_log_lock:
             return cls.__event_log.attest()
 
     @classmethod
     def submit_build(cls, build_request: Build, workspace: Path) -> None:
+        """Start the execution of the build in a separate thread
+
+        If a build has already been done, an exception is raised.
+
+        Args:
+            build_request (Build): build specs (see aicert-common's protocol)
+            workspace (Path): directory where inputs are downloaded and that will
+                be mounted on the build container at /mnt
+        """
         with cls.__thread_lock:
             if cls.__used:
                 raise HTTPException(
@@ -202,6 +305,15 @@ class Builder:
     
     @classmethod
     def submit_serve(cls, serve_request: Serve, workspace: Path) -> None:
+        """Start the execution of the build in a separate thread
+
+        If a build has not been done yet, an exception is raised.
+
+        Args:
+            serve_request (Serve): serve specs (see aicert-common's protocol)
+            workspace (Path): directory containing the outputs of the build
+                and that willbe mounted on the serve container at /mnt
+        """
         with cls.__serve_thread_lock:
             if not cls.__serve_ready:
                 raise HTTPException(
@@ -212,6 +324,11 @@ class Builder:
 
     @classmethod
     def poll_build(cls) -> bool:
+        """Check build status
+        
+        Returns False while the build thread has not completed, True if it has
+        completed successfully and (re)raises an error if one occured in the thread.
+        """
         with cls.__thread_lock:
             if cls.__thread is not None and not cls.__thread.is_alive():
                 with cls.__event_log_lock:
