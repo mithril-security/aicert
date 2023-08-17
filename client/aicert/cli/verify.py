@@ -7,7 +7,7 @@ import OpenSSL
 from OpenSSL import crypto
 import requests
 import yaml
-from .logging import log
+from aicert_common.logging import log
 
 
 from cryptography.hazmat.primitives import serialization
@@ -140,6 +140,7 @@ def check_server_cert(
     log.info(f"Expected PCR : {current_pcr.hex()}")
     # Both PCR MUST match, else something sketchy is going on!
     assert pcr_end == current_pcr.hex()
+
 
 def check_event_log(
     input_event_log,

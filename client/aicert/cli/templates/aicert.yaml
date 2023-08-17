@@ -1,6 +1,4 @@
-version: "0.1.0"
-cloud: azure
-machine: local
+version: 0.1.0
 build:
   image: "debian:bullseye"
   cmdline: |
@@ -12,3 +10,7 @@ build:
       path: src
       dependencies: none
   outputs: helloworld
+runner:
+  daemon: "http://127.0.0.1:8082"
+  platform: "azure-tpm"
+  instance_type: "cvm"

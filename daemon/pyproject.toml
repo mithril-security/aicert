@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "control-plane"
+name = "aicert-daemon"
 version = "0.1.0"
 description = ""
 authors = ["Corentin Lauverjat <corentin.lauverjat@mithrilsecurity.io>"]
 readme = "README.md"
-packages = [{include = "control_plane"}]
+packages = [{include = "aicert_daemon"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -14,6 +14,8 @@ rich = "^13.4.2"
 ansible = "^8.2.0"
 requests = "^2.31.0"
 
+aicert-common = { path = "../common" }
+
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
@@ -21,3 +23,6 @@ black = "^23.7.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+aicert-daemon = 'aicert_daemon.main:main'

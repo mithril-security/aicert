@@ -19,5 +19,5 @@ az account set --subscription "Microsoft Azure Sponsorship"
 # Run control plane
 
 ```
-poetry run uvicorn control_plane.main:app --host 127.0.0.1 --port 8082
+poetry run uvicorn aicert_daemon.main:app --host 127.0.0.1 --port 8082
 ```
