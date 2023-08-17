@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 import pkgutil
 import requests
-import shutil
 import subprocess
 import sys
 from time import sleep
@@ -19,10 +18,12 @@ from .logging import log
 from .requests_adapter import ForcedIPHTTPSAdapter
 from .verify import (
     PCR_FOR_MEASUREMENT,
+    PCR_FOR_CERTIFICATE,
     check_event_log,
     check_quote,
     decode_b64_encoding,
     verify_ak_cert,
+    check_server_cert
 )
 
 
@@ -214,7 +215,9 @@ class Client:
         - save outputs to a file (attestation and artifacts)
         - run terraform destroy on ~/.aicert
         """
-        if not self.__simulation_mode:
+        import ssl, socket
+
+        if not self.__simulation_mode:  
             log.info("Launching the runner...")
             r = requests.post(f"{control_plane_url}/launch_runner")
             log.info("Runner is ready.")
@@ -241,9 +244,33 @@ class Client:
 
             session.verify = server_ca_crt_file.name
             session.cert = (client_crt_file.name, client_key_file.name)
+            
+            # Get server cert using an ssl socket because it's not accessible from a requests.Session object
+            context = ssl.create_default_context(cafile=server_ca_crt_file.name)
+            context.load_cert_chain(certfile=client_crt_file.name, keyfile=client_key_file.name)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            conn = context.wrap_socket(s, server_side=False, server_hostname="aicert_worker")
+            conn.connect((r["runner_ip"], 443))
+            server_crt = ssl.DER_cert_to_PEM_cert(conn.getpeercert(True))
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+
         else:
             base_url = "http://localhost:8000"
             session = requests.Session()
+
+        # Get a quote containing the server certificate for aTLS
+        res = session.get(f"{base_url}/aTLS")
+        log_and_exit_for_status(
+                res, "Cannot retrieve server certificate for aTLS"
+            )
+
+        with (dir / "aTLS_attestation.json").open("wb") as f:
+                f.write(res.content)
+        log.info("aTLS attestation received")
+        
+        # Verify quote and TLS certificate
+        self.verify_cmd(dir / "aTLS_attestation.json", PCR_FOR_CERTIFICATE, server_crt)
 
         # Submit build request
         log.info("Submitting build request")
@@ -289,14 +316,21 @@ class Client:
             requests.post("http://localhost:8082/destroy_runner")
             log.info("Runner destroyed successfully")
 
-    def verify_cmd(self, dir: Path) -> None:
+    def verify_cmd(self, dir: Path, pcr_index=PCR_FOR_MEASUREMENT, server_cert="") -> None:
         """Launch verification process
 
         Example:
         aicert verify "/workspaces/aicert_dev/server/aicert_server/sample_build_response.json"
         """
-        with (dir / "attestation.json").open("r") as f:
-            build_response = json.load(f)
+        if pcr_index == PCR_FOR_MEASUREMENT:
+            with (dir / "attestation.json").open("r") as f:
+                build_response = json.load(f)
+            original_list = build_response["event_log"]
+
+        elif pcr_index == PCR_FOR_CERTIFICATE:
+            with (dir).open("r") as f:
+                build_response = json.load(f)
+            original_list = server_cert
 
         if "simulation_mode" in build_response["remote_attestation"]:
             if self.__simulation_mode:
@@ -322,8 +356,6 @@ class Client:
         ak_cert = verify_ak_cert(
             cert_chain=build_response["remote_attestation"]["cert_chain"]
         )
-
-        # typer.secho(f"✅ Valid certificate chain", fg=typer.colors.GREEN)
 
         ak_cert_ = load_der_x509_certificate(ak_cert)
         ak_pub_key = ak_cert_.public_key()
@@ -375,18 +407,25 @@ class Client:
 
         # typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
 
-        # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
-        # But because it is resettable it MUST NOT be used in practice.
-        # An unused PCR that cannot be reset (SRTM) MUST be used instead
-        # PCR 14 or 15 should do it
-        event_log = check_event_log(
-            build_response["event_log"],
-            att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
-        )
+        if pcr_index == PCR_FOR_MEASUREMENT:
+            # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
+            # But because it is resettable it MUST NOT be used in practice.
+            # An unused PCR that cannot be reset (SRTM) MUST be used instead
+            # PCR 14 or 15 should do it
+            event_log = check_event_log(
+                #build_response["event_log"],
+                original_list,
+                att_document["pcrs"]["sha256"][pcr_index],
+            )
 
-        typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
+            typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
 
-        print(yaml.safe_dump(event_log))
+            print(yaml.safe_dump(event_log))
+        
+        elif pcr_index == PCR_FOR_CERTIFICATE:
+            check_server_cert(original_list,att_document["pcrs"]["sha256"][pcr_index])
+
+            typer.secho(f"✅ Valid TLS certificate", fg=typer.colors.GREEN)
 
         typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
 

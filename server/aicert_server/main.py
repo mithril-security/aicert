@@ -7,11 +7,13 @@ from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
+import hashlib
 
 from aicert_common.protocol import BuildRequest, FileList
 from .builder import Builder, SIMULATION_MODE
+from .tpm import tpm_extend_pcr
 
-
+CERT_PATH = "/home/azureuser/aicert_worker.crt"
 WORKSPACE = Path.cwd() / "workspace"
 WORKSPACE.mkdir(exist_ok=SIMULATION_MODE)
 
@@ -56,8 +58,27 @@ def attestation() -> Response:
         },
     )
 
+@app.get("/aTLS")
+def aTLS() -> Response:
+    # Extends PCR 15 with the server certificate and generates and returns the attestation
+    with open(CERT_PATH,"r") as f:
+        cert_chain = f.read()
+        cert = cert_chain.split("-----END CERTIFICATE-----")
+        cert = cert[0]+"-----END CERTIFICATE-----\n"
+
+    cert_hash = hashlib.sha256(cert.encode("utf-8")).hexdigest()
+    tpm_extend_pcr(15,cert_hash)
+
+    return jsonable_encoder(
+        Builder.get_attestation(),
+        custom_encoder={
+            bytes: lambda v: {"base64": base64.b64encode(v).decode("utf-8")}
+        },
+    )
+
 
 def main():
     if SIMULATION_MODE:
         print("WARNING: running in SIMULATION MODE, the TPM will not be used")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000) #, ssl_keyfile="./key.pem", ssl_certfile="./cert.pem")

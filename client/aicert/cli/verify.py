@@ -13,7 +13,7 @@ from .logging import log
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 
-
+PCR_FOR_CERTIFICATE = 15
 PCR_FOR_MEASUREMENT = 16
 
 
@@ -124,6 +124,22 @@ def check_quote(quote, pub_key_pem):
         }
         return att_document
 
+
+def check_server_cert(
+    received_cert,
+    pcr_end,
+    initial_pcr="0000000000000000000000000000000000000000000000000000000000000000",
+):
+    initial_pcr = bytes.fromhex(initial_pcr)
+    current_pcr = initial_pcr
+
+    hash_event = hashlib.sha256(received_cert.encode()).digest()
+    current_pcr = hashlib.sha256(current_pcr + hash_event).digest()
+
+    log.info(f"PCR in quote : {pcr_end}")
+    log.info(f"Expected PCR : {current_pcr.hex()}")
+    # Both PCR MUST match, else something sketchy is going on!
+    assert pcr_end == current_pcr.hex()
 
 def check_event_log(
     input_event_log,
