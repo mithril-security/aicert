@@ -29,7 +29,7 @@ from pathlib import Path
 import typer
 from typing import Annotated
 
-from .client import Client, log_errors_and_warnings
+from .client import Client
 from aicert_common.logging import log
 from aicert_common.errors import log_errors_and_warnings
 

@@ -7,7 +7,7 @@ import OpenSSL
 from OpenSSL import crypto
 import requests
 import yaml
-from .logging import log
+from aicert_common.logging import log
 
 
 from cryptography.hazmat.primitives import serialization

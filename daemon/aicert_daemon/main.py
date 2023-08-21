@@ -9,7 +9,7 @@ from pathlib import Path
 import uvicorn
 
 from .daemon import Dameon
-
+from aicert_common.protocol import Runner
 
 aicert_home = Path.home() / ".aicert"
 Dameon.init(aicert_home)
@@ -19,8 +19,8 @@ app = FastAPI()
 
 
 @app.post("/launch_runner")
-async def launch_runner():
-    return Dameon.launch_runner(aicert_home)
+async def launch_runner(runner_config: Runner):
+    return Dameon.launch_runner(aicert_home, runner_config)
 
 
 @app.post("/destroy_runner")
