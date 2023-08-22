@@ -78,22 +78,17 @@ def attestation() -> Response:
 
 @app.get("/aTLS")
 def aTLS() -> Response:
-    # Extends PCR 15 with the concatenation of the server certificate and CA certificate and generates and returns the attestation
-    with open(CERT_PATH, "r") as f:
-        cert_chain = f.read()
-        server_cert = cert_chain.split("-----END CERTIFICATE-----")
-        server_cert = server_cert[0]+"-----END CERTIFICATE-----\n"
+    # Extends PCR 15 with the CA certificate and generates and returns the attestation
 
     with open(CA_PATH, "r") as r:
         ca_cert = r.read()
     
-    certs = server_cert + ca_cert
-    cert_hash = hashlib.sha256(certs.encode("utf-8")).hexdigest()
-    
+    cert_hash = hashlib.sha256(ca_cert.encode("utf-8")).hexdigest()
+
     tpm_extend_pcr(PCR_FOR_CERTIFICATE, cert_hash)
 
     return jsonable_encoder(
-        Builder.get_attestation(),
+        Builder.get_attestation(ca_cert),
         custom_encoder={
             bytes: lambda v: {"base64": base64.b64encode(v).decode("utf-8")}
         },

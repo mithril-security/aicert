@@ -233,28 +233,35 @@ class Client:
                 self.__base_url, ForcedIPHTTPSAdapter(dest_ip=res["runner_ip"])
             )
 
-            client_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
-            client_key_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
+            ca_cert = self.verify_server_certificate(res["runner_ip"])
+
             server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
-
-            client_crt_file.write(res["client_cert"])
-            client_crt_file.flush()
-            client_key_file.write(res["client_private_key"])
-            client_key_file.flush()
-            server_ca_crt_file.write(res["server_ca_cert"])
+            server_ca_crt_file.write(ca_cert)
             server_ca_crt_file.flush()
-
             self.__session.verify = server_ca_crt_file.name
-            self.__session.cert = (client_crt_file.name, client_key_file.name)
 
-            self.verify_server_certificate(res["runner_ip"])
+            #if ca_cert != res["server_ca_cert"]:
+
         else:
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
             warnings.warn("Ignoring machine settings in simulation mode")
         
-    
-    def disconnect(self):
+    def connect_query(self, server_ip):
+        """Connect to service to run a query"""
+        self.__base_url = "https://aicert_worker"
+
+        self.__session = requests.Session()
+        self.__session.mount(
+            self.__base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip)
+        )        
+        ca_cert = self.verify_server_certificate(server_ip)
+        server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
+        server_ca_crt_file.write(ca_cert)
+        server_ca_crt_file.flush()
+        self.__session.verify = server_ca_crt_file.name
+
+    def disconnect(self, destroy = False):
         """Close connection with the runner.
 
         The client asks the daemon to destroy the runner.
@@ -263,11 +270,13 @@ class Client:
 
         if not self.__simulation_mode:
             #Delete client key and certs
-            for file in [self.__session.verify, self.__session.cert[0], self.__session.cert[1]]:
+            for file in [self.__session.verify]: #, self.__session.cert[0], self.__session.cert[1]]:
                 if os.path.isfile(file):
                     os.remove(file)
 
-            raise_for_status(requests.post("http://localhost:8082/destroy_runner"), "Cannot destroy runner")
+            if destroy:
+                raise_for_status(requests.post("http://localhost:8082/destroy_runner"), "Cannot destroy runner")
+            
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
 
@@ -276,33 +285,23 @@ class Client:
         """Retrieve server certificate and validate it with 
         the attestation report.
         """
-        import ssl, socket
-
-        # Get server cert using an ssl socket because it's not accessible from a requests.Session object
-        context = ssl.create_default_context(cafile=self.__session.verify)
-        context.load_cert_chain(certfile=self.__session.cert[0], keyfile=self.__session.cert[1])
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn = context.wrap_socket(s, server_side=False, server_hostname="aicert_worker")
-        conn.connect((server_ip, 443))
-        server_crt = ssl.DER_cert_to_PEM_cert(conn.getpeercert(True))
-        conn.shutdown(socket.SHUT_RDWR)
-        conn.close()
-
-        # Read CA cert ontained from remote machine
-        with open(self.__session.verify, "r") as f:
-            ca_cert = f.read()
-        
-        # Concatanate server certificate and CA certificate
-        certs = server_crt+ca_cert
-
-        # Get a quote containing the server certificate for aTLS
-        res = self.__session.get(f"{self.__base_url}/aTLS")
-        raise_for_status(
-                res, "Cannot retrieve server certificate for aTLS"
+        session = requests.Session()
+        session.mount(
+                self.__base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip)
             )
         
-        # Verify quote and TLS certificate
-        self.verify_build_response(res.content, PCR_FOR_CERTIFICATE, True, certs)
+        attestation = session.get(f"{self.__base_url}/aTLS",verify=False)
+        raise_for_status(
+                attestation, "Cannot retrieve server certificate for aTLS"
+            )
+
+        attestation_json = json.loads(attestation.content)
+
+        ca_cert = attestation_json["ca_cert"]
+
+        # Verify quote and CA TLS certificate
+        self.verify_build_response(attestation.content, PCR_FOR_CERTIFICATE, True, ca_cert)
+        return ca_cert
 
     def submit_build(self, build_cfg: Optional[Build] = None) -> None:
         """Send a submit_build request to the runner
@@ -380,6 +379,11 @@ class Client:
             raise_for_status(res, f"Cannot download output file {filename}")
             with (dir / filename).open("wb") as f:
                 f.write(res.content)
+
+    def run_query(self, query):
+        """Send query to service"""
+        res = self.__session.post(f"{self.__base_url}/predict", data=query)
+        return res.content
 
     def new_config(self, dir: Path) -> None:
         """Set up the workspace by copying template files

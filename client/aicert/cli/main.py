@@ -91,8 +91,36 @@ def build(
             client.submit_serve()
             log.info(f"Deployment running")
         else:
-            client.disconnect()
+            log.info(f"Nothing to serve. Run aicert destroy to tear down all resources.")
+            #client.disconnect()
 
+@app.command()
+def query(
+    service_ip,
+    query,
+    dir: Annotated[Path, typer.Option()] = Path.cwd(),
+    interactive: Annotated[bool, typer.Option()] = True,
+):
+    """Query a running service"""
+    client = Client.from_config_file(
+        dir=dir,
+        interactive=interactive,
+        simulation_mode=SIMULATION_MODE,
+    )
+
+    client.connect(service_ip)
+
+    attestation = client.wait_for_attestation()
+    log.info(f"Received attestation")
+
+    client.verify_build_response(attestation, verbose=False)
+    log.info(f"Attestation validated")
+
+    response = client.run_query(query)    
+    
+    print("Response from service: ")
+    print(response)
+    
 
 @app.command()
 def verify(
@@ -111,3 +139,19 @@ def verify(
             attestation = f.read()
 
     client.verify_build_response(attestation, verbose=True)
+
+
+@app.command()
+def destroy(
+    dir: Annotated[Path, typer.Option()] = Path.cwd(),
+    interactive: Annotated[bool, typer.Option()] = True,
+):
+    """Destroys all the reources created on the CSP"""
+    client = Client.from_config_file(
+        dir=dir,
+        interactive=interactive,
+        simulation_mode=SIMULATION_MODE,
+    )
+
+    # Destroys reunner and clears session
+    client.disconnect(True)

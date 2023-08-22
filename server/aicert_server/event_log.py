@@ -113,7 +113,7 @@ class EventLog:
             }
         )
 
-    def attest(self) -> Dict[str, Any]:
+    def attest(self, ca_cert) -> Dict[str, Any]:
         """Return the full event log, the TPM quote and the certificate chain in the same dict
 
         The TPM quote contains all the PCR values (includong the one backing the event log).
@@ -122,6 +122,7 @@ class EventLog:
         In simulation mode, only the event log is return along with a special simulation_mode key.
         """
         return {
+            "ca_cert": ca_cert,
             "event_log": self.__event_log,
             "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()}
             if not self.__simulation_mode
