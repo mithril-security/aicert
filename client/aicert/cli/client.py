@@ -205,7 +205,7 @@ class Client:
 
         return client
     
-    def connect(self, dir, runner_cfg: Optional[Runner] = None) -> None:
+    def connect(self, runner_cfg: Optional[Runner] = None) -> None:
         """Establish a TLS connection with the runner.
 
         1. The client contacts the configured daemon to ask for a runner.
@@ -247,7 +247,7 @@ class Client:
             self.__session.verify = server_ca_crt_file.name
             self.__session.cert = (client_crt_file.name, client_key_file.name)
 
-            self.verify_server_certificate(res["runner_ip"], dir)
+            self.verify_server_certificate(res["runner_ip"])
         else:
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
@@ -272,7 +272,7 @@ class Client:
             self.__session = requests.Session()
 
     
-    def verify_server_certificate(self, server_ip, dir):
+    def verify_server_certificate(self, server_ip):
         """Retrieve server certificate and validate it with 
         the attestation report.
         """
@@ -288,6 +288,13 @@ class Client:
         conn.shutdown(socket.SHUT_RDWR)
         conn.close()
 
+        # Read CA cert ontained from remote machine
+        with open(self.__session.verify, "r") as f:
+            ca_cert = f.read()
+        
+        # Concatanate server certificate and CA certificate
+        certs = server_crt+ca_cert
+
         # Get a quote containing the server certificate for aTLS
         res = self.__session.get(f"{self.__base_url}/aTLS")
         raise_for_status(
@@ -295,7 +302,7 @@ class Client:
             )
         
         # Verify quote and TLS certificate
-        self.verify_build_response(res.content, PCR_FOR_CERTIFICATE, True, server_crt)
+        self.verify_build_response(res.content, PCR_FOR_CERTIFICATE, True, certs)
 
     def submit_build(self, build_cfg: Optional[Build] = None) -> None:
         """Send a submit_build request to the runner
@@ -385,7 +392,7 @@ class Client:
             "templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True
         )
 
-    def verify_build_response(self, build_response: bytes, pcr_index = PCR_FOR_MEASUREMENT, verbose: bool = False, server_crt = ""):
+    def verify_build_response(self, build_response: bytes, pcr_index = PCR_FOR_MEASUREMENT, verbose: bool = False, server_certs = ""):
         """Verify received attesation validity
 
         1. Parse the JSON reponse
@@ -491,10 +498,14 @@ class Client:
 
 
         elif pcr_index == PCR_FOR_CERTIFICATE:
-            check_server_cert(
-                server_crt,
+            result = check_server_cert(
+                server_certs,
                 att_document["pcrs"]["sha256"][pcr_index],
             )
+            if not result:
+                # Disconnect destroys the runner, this might not be required for an attestation failure
+                self.disconnect()
+                raise AICertInvalidAttestationException(f"❌ Attestation validation failed.")   
 
 
 def raise_for_status(res: requests.Response, message: str) -> None:

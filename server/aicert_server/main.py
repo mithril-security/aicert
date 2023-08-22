@@ -24,6 +24,7 @@ from aicert_common.protocol import Build, Serve, FileList
 from .builder import Builder, SIMULATION_MODE
 from .tpm import tpm_extend_pcr
 
+CA_PATH = "/home/azureuser/root.crt"
 CERT_PATH = "/home/azureuser/aicert_worker.crt"
 PCR_FOR_CERTIFICATE = 15
 WORKSPACE = Path.cwd() / "workspace"
@@ -77,13 +78,18 @@ def attestation() -> Response:
 
 @app.get("/aTLS")
 def aTLS() -> Response:
-    # Extends PCR 15 with the server certificate and generates and returns the attestation
-    with open(CERT_PATH,"r") as f:
+    # Extends PCR 15 with the concatenation of the server certificate and CA certificate and generates and returns the attestation
+    with open(CERT_PATH, "r") as f:
         cert_chain = f.read()
-        cert = cert_chain.split("-----END CERTIFICATE-----")
-        cert = cert[0]+"-----END CERTIFICATE-----\n"
+        server_cert = cert_chain.split("-----END CERTIFICATE-----")
+        server_cert = server_cert[0]+"-----END CERTIFICATE-----\n"
 
-    cert_hash = hashlib.sha256(cert.encode("utf-8")).hexdigest()
+    with open(CA_PATH, "r") as r:
+        ca_cert = r.read()
+    
+    certs = server_cert + ca_cert
+    cert_hash = hashlib.sha256(certs.encode("utf-8")).hexdigest()
+    
     tpm_extend_pcr(PCR_FOR_CERTIFICATE, cert_hash)
 
     return jsonable_encoder(

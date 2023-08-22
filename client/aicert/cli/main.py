@@ -74,7 +74,7 @@ def build(
             simulation_mode=SIMULATION_MODE,
         )
         log.info(f"Connecting to runner at {client.daemon_address}")
-        client.connect(dir)
+        client.connect()
 
         log.info("Sumitting build request")
         client.submit_build()

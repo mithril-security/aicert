@@ -139,7 +139,10 @@ def check_server_cert(
     log.info(f"PCR in quote : {pcr_end}")
     log.info(f"Expected PCR : {current_pcr.hex()}")
     # Both PCR MUST match, else something sketchy is going on!
-    assert pcr_end == current_pcr.hex()
+    if pcr_end != current_pcr.hex():
+        return False
+    
+    return True
 
 
 def check_event_log(

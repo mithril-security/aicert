@@ -126,7 +126,8 @@
       shell: |
         sudo chown -R azureuser /var/lib/caddy/
         cp /var/lib/caddy/.local/share/caddy/certificates/local/aicert_worker/aicert_worker.crt /home/azureuser/aicert_worker.crt
-        sudo chown azureuser /home/azureuser/aicert_worker.crt
+        cp /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt /home/azureuser/root.crt
+        sudo chown azureuser /home/azureuser/aicert_worker.crt /home/azureuser/root.crt
         sudo chown -R caddy /var/lib/caddy/
       args:
         executable: /bin/bash

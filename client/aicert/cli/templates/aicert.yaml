@@ -13,4 +13,4 @@ build:
 runner:
   daemon: "http://127.0.0.1:8082"
   platform: "azure-tpm"
-  instance_type: "cvm"
+  instance_type: "Standard_DS1_v2"
