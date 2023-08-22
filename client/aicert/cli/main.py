@@ -108,7 +108,7 @@ def query(
         simulation_mode=SIMULATION_MODE,
     )
 
-    client.connect(service_ip)
+    client.connect_query(service_ip)
 
     attestation = client.wait_for_attestation()
     log.info(f"Received attestation")
