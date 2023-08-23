@@ -87,6 +87,8 @@ class Client:
         self.__interactive = interactive
         self.__simulation_mode = simulation_mode
         self.__base_url = "http://localhost:8000"
+        self.__service_url = ""
+        self.__ip = ""
         self.__session = requests.Session()
 
         if self.__simulation_mode:
@@ -249,16 +251,19 @@ class Client:
         
     def connect_query(self, server_ip):
         """Connect to service to run a query"""
+        self.__service_url = "https://llama_worker"
         self.__base_url = "https://aicert_worker"
-
-        self.__session = requests.Session()
-        self.__session.mount(
-            self.__base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip)
-        )        
+        self.__ip = server_ip
+             
         ca_cert = self.verify_server_certificate(server_ip)
         server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
         server_ca_crt_file.write(ca_cert)
         server_ca_crt_file.flush()
+
+        self.__session = requests.Session()
+        self.__session.mount(
+            self.__base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip)
+        )
         self.__session.verify = server_ca_crt_file.name
 
     def disconnect(self, destroy = False):
@@ -382,7 +387,14 @@ class Client:
 
     def run_query(self, query):
         """Send query to service"""
-        res = self.__session.post(f"{self.__base_url}/predict", data=query)
+        ca_cert = self.__session.verify
+        self.__session = requests.Session()
+        self.__session.mount(
+            self.__service_url, ForcedIPHTTPSAdapter(dest_ip=self.__ip)
+        )
+        self.__session.verify = ca_cert
+        res = self.__session.post(f"{self.__service_url}/predict", data=query)
+        print(res)
         return res.content
 
     def new_config(self, dir: Path) -> None:

@@ -8,3 +8,14 @@ aicert_worker {
 	# Reverse proxy to the app
 	reverse_proxy 127.0.0.1:8080
 }
+
+llama_worker {
+	# Bind to all network interfaces
+	bind 0.0.0.0
+
+	# Use self-signed certificates
+	tls internal
+
+	# Reverse proxy to the app
+	reverse_proxy 127.0.0.1:8090
+}

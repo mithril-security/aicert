@@ -1,16 +1,23 @@
 version: 0.1.0
 build:
-  image: "debian:bullseye"
-  cmdline: |
-    /bin/sh -c 'apt update && apt install -y build-essential && gcc -o helloworld ./src/main.c'
+  image: mithrilsecuritysas/torch_fastapi_dev:latest@sha256:ddb619e601f881eec06b7d713e8eef71b797aac7e897f3d0b995377a362827d1
+  cmdline: /bin/sh -c 'echo foo > certificate.crt'
   inputs:
     - resource_type: git
-      repo: "https://github.com/mithril-security/sample-repo.git"
+      repo: https://github.com/mithril-security/llama.git
       branch: main
       path: src
       dependencies: none
-  outputs: helloworld
+    - resource_type: file
+      url: https://s3.amazonaws.com/pytorch/models/resnet18-5c106cde.pth
+      compression: none
+      path: model.pth
+  outputs: certificate.crt
+serve:
+ cmdline: python3 src/llama/main.py
+ host_port: 8090
+ container_port: 8000
 runner:
   daemon: "http://127.0.0.1:8082"
   platform: "azure-tpm"
-  instance_type: "Standard_DS1_v2"
+  instance_type: "Standard_DS5_v2"

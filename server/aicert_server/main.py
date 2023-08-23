@@ -22,7 +22,7 @@ import hashlib
 
 from aicert_common.protocol import Build, Serve, FileList
 from .builder import Builder, SIMULATION_MODE
-from .tpm import tpm_extend_pcr
+from .tpm import tpm_extend_pcr, tpm_read_pcr
 
 CA_PATH = "/home/azureuser/root.crt"
 CERT_PATH = "/home/azureuser/aicert_worker.crt"
@@ -85,7 +85,9 @@ def aTLS() -> Response:
     
     cert_hash = hashlib.sha256(ca_cert.encode("utf-8")).hexdigest()
 
-    tpm_extend_pcr(PCR_FOR_CERTIFICATE, cert_hash)
+    tpm_value = tpm_read_pcr(PCR_FOR_CERTIFICATE)
+    if tpm_value == "0000000000000000000000000000000000000000000000000000000000000000":
+        tpm_extend_pcr(PCR_FOR_CERTIFICATE, cert_hash)
 
     return jsonable_encoder(
         Builder.get_attestation(ca_cert),
