@@ -219,7 +219,11 @@ class Client:
             if runner_cfg is None:
                 raise AICertException("No runner has been configured")
             
-            res = requests.post(f"{runner_cfg.daemon}/launch_runner")
+            res = requests.post(
+                f"{runner_cfg.daemon}/launch_runner",
+                data=runner_cfg.json(),
+                headers={"Content-Type": "application/json"}
+            )
             raise_for_status(res, "Cannot create runner")
             res = res.json()
 
@@ -230,9 +234,9 @@ class Client:
                 self.__base_url, ForcedIPHTTPSAdapter(dest_ip=res["runner_ip"])
             )
 
-            client_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
-            client_key_file = tempfile.NamedTemporaryFile(mode="w+t")
-            server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
+            client_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
+            client_key_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
+            server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
 
             client_crt_file.write(res["client_cert"])
             client_crt_file.flush()
@@ -253,7 +257,14 @@ class Client:
 
         The client asks the daemon to destroy the runner.
         """
+        import os
+
         if not self.__simulation_mode:
+            #Delete client key and certs
+            for file in [self.__session.verify, self.__session.cert[0], self.__session.cert[1]]:
+                if os.path.isfile(file):
+                    os.remove(file)
+                    
             raise_for_status(requests.post("http://localhost:8082/destroy_runner"), "Cannot destroy runner")
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
