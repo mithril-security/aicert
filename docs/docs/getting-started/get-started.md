@@ -1,4 +1,8 @@
-# ☀️ Getting started with AICert!
+---
+description: "Get started with AICert: Understand the workflow and implementation of AICert, enabling AI providers to provide proof of AI provenance and code integrity for safer AI"
+---
+
+# Getting started with AICert!
 ________________________________________________________
 
 

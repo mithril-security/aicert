@@ -1,3 +1,7 @@
+---
+description: "Learn about TPMs and how we use them to create trustable proof of AI provenance through the attestation process"
+---
+
 # 📜 Attestation with Trusted Platform Modules
 ________________________________________________________
 
