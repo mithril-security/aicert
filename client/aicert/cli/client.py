@@ -18,10 +18,12 @@ from aicert_common.errors import AICertException
 from .requests_adapter import ForcedIPHTTPSAdapter
 from .verify import (
     PCR_FOR_MEASUREMENT,
+    PCR_FOR_CERTIFICATE,
     check_event_log,
     check_quote,
     decode_b64_encoding,
     verify_ak_cert,
+    check_server_cert
 )
 
 
@@ -214,6 +216,7 @@ class Client:
             runner_cfg (Runner, optional): Runner configuration object. If not provided,
                 the client defaults to using the runner section of the config file.
         """
+
         if not self.__simulation_mode:
             runner_cfg = runner_cfg if runner_cfg is not None else self.__cfg.runner
             if runner_cfg is None:
@@ -230,33 +233,67 @@ class Client:
                 self.__base_url, ForcedIPHTTPSAdapter(dest_ip=res["runner_ip"])
             )
 
-            client_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
-            client_key_file = tempfile.NamedTemporaryFile(mode="w+t")
-            server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t")
+            ca_cert = self.verify_server_certificate(res["runner_ip"])
+
+            client_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
+            client_key_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
+            server_ca_crt_file = tempfile.NamedTemporaryFile(mode="w+t", delete=False)
 
             client_crt_file.write(res["client_cert"])
             client_crt_file.flush()
             client_key_file.write(res["client_private_key"])
             client_key_file.flush()
-            server_ca_crt_file.write(res["server_ca_cert"])
+            server_ca_crt_file.write(ca_cert)
             server_ca_crt_file.flush()
 
             self.__session.verify = server_ca_crt_file.name
             self.__session.cert = (client_crt_file.name, client_key_file.name)
+
         else:
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
             warnings.warn("Ignoring machine settings in simulation mode")
+        
     
     def disconnect(self):
         """Close connection with the runner.
 
         The client asks the daemon to destroy the runner.
         """
+        import os
+
         if not self.__simulation_mode:
+            #Delete client key and certs
+            for file in [self.__session.verify, self.__session.cert[0], self.__session.cert[1]]:
+                if os.path.isfile(file):
+                    os.remove(file)
+
             raise_for_status(requests.post("http://localhost:8082/destroy_runner"), "Cannot destroy runner")
             self.__base_url = "http://localhost:8000"
             self.__session = requests.Session()
+
+    
+    def verify_server_certificate(self, server_ip):
+        """Retrieve server CA certificate and validate it with 
+        the attestation report.
+        """
+        session = requests.Session()
+        session.mount(
+                self.__base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip)
+            )
+        
+        attestation = session.get(f"{self.__base_url}/aTLS",verify=False)
+        raise_for_status(
+                attestation, "Cannot retrieve server certificate for aTLS"
+            )
+
+        attestation_json = json.loads(attestation.content)
+
+        ca_cert = attestation_json["ca_cert"]
+
+        # Verify quote and CA TLS certificate
+        self.verify_build_response(attestation.content, PCR_FOR_CERTIFICATE, True, ca_cert)
+        return ca_cert
 
     def submit_build(self, build_cfg: Optional[Build] = None) -> None:
         """Send a submit_build request to the runner
@@ -346,7 +383,7 @@ class Client:
             "templates/aicert.yaml", dir / "aicert.yaml", confirm_replace=True
         )
 
-    def verify_build_response(self, build_response: bytes, verbose: bool = False):
+    def verify_build_response(self, build_response: bytes, pcr_index = PCR_FOR_MEASUREMENT, verbose: bool = False, server_certs = ""):
         """Verify received attesation validity
 
         1. Parse the JSON reponse
@@ -355,6 +392,8 @@ class Client:
         4. Verify quote signature
         5. Verify boot PCRs (firmware, bootloader, initramfs, OS)
         6. Verify event log (final hash in PCR_FOR_MEASUREMENT) by replaying it (works like a chain of hashes)
+        OR
+        6. Verify TLS certificate (final hash in PCR_FOR_CERTIFICATE)
         
         Args:
             build_response (bytes): reponse of the attestation endpoint
@@ -434,19 +473,31 @@ class Client:
         # if verbose:
         #     typer.secho(f"✅ Checking reported PCRs are as expected", fg=typer.colors.GREEN)
 
-        # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
-        # But because it is resettable it MUST NOT be used in practice.
-        # An unused PCR that cannot be reset (SRTM) MUST be used instead
-        # PCR 14 or 15 should do it
-        event_log = check_event_log(
-            build_response["event_log"],
-            att_document["pcrs"]["sha256"][PCR_FOR_MEASUREMENT],
-        )
+        if pcr_index == PCR_FOR_MEASUREMENT:
+            # To make test easier we use the PCR 16 since it is resettable `tpm2_pcrreset 16`
+            # But because it is resettable it MUST NOT be used in practice.
+            # An unused PCR that cannot be reset (SRTM) MUST be used instead
+            # PCR 14 or 15 should do it
+            event_log = check_event_log(
+                build_response["event_log"],
+                att_document["pcrs"]["sha256"][pcr_index],
+            )
+            if verbose:
+                typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
+                print(yaml.safe_dump(event_log))
+                typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
 
-        if verbose:
-            typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
-            print(yaml.safe_dump(event_log))
-            typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
+
+        elif pcr_index == PCR_FOR_CERTIFICATE:
+            result = check_server_cert(
+                server_certs,
+                att_document["pcrs"]["sha256"][pcr_index],
+            )
+            if not result:
+                # Disconnect destroys the runner, this might not be required for an attestation failure
+                self.disconnect()
+                raise AICertInvalidAttestationException(f"❌ Attestation validation failed.")   
+
 
 def raise_for_status(res: requests.Response, message: str) -> None:
     """Raise AICertHTTPException if passed response has a status code outside the 200 range

@@ -275,7 +275,7 @@ class Builder:
         )
     
     @classmethod
-    def get_attestation(cls) -> Dict[str, Any]:
+    def get_attestation(cls, ca_cert = "") -> Dict[str, Any]:
         """Return the event log and the corresponding TPM measurement
         
         Blocks until the event log lock is released (i.e. when the build is over).
