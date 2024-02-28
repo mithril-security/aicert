@@ -13,6 +13,8 @@ from .event_log import EventLog
 
 docker_client = docker.from_env()
 BASE_IMAGE = "mithrilsecuritysas/aicertbase:latest"
+AXOLOTL_IMAGE = "winglian/axolotl:main-py3.11-cu121-2.1.2"
+AXOLOTL_IMAGE_HASH = "sha256:3c9bd953fb315be836dbf1c8a41745a1090b148852576c90315ec76fc2c01793"
 SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
 
 
@@ -171,6 +173,13 @@ class Builder:
                 workspace=workspace / path,
             )
             resource_hash = f"sha1:{resource_hash}"
+        elif spec.resource_type == "model":
+            resource_hash = spec.hash
+            cls.__docker_run(
+                cmd=CmdLine(
+                    []
+                )
+            )
         else:
             download_path = (
                 f"/tmp/000_aicert_{str(path).replace('/', '_')}"
@@ -337,3 +346,34 @@ class Builder:
                 return True
             else:
                 return False
+    
+    @classmethod
+    def build_axolotl_inputs(cls, build_request: Build, workspace: Path) -> None:
+        """
+        
+        """
+        with cls.__thread_lock:
+            if cls.__used:
+                return HTTPException(
+                    status_code=409, detail=f"Cannot build more than once"
+                )
+            cls.__used = True
+            cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace))
+            cls.__thread.start()
+
+
+    @classmethod
+    def serve_axolotl(cls, build_request: Build, workspace: Path) -> None : 
+        """ Builds the axolotl image and downloads the requested inputs to 
+            be ran with.
+        
+            1. Builds with the Axolotl image specified with the const AXOLOTL_IMAGE
+            2. fetch the resources 
+            3. 
+        
+        
+        """
+        with cls.__thread_lock:
+            if cls.__thread is not None and cls.__thread.is_alive():
+                
+        

@@ -48,8 +48,26 @@ class GitResource(BaseModel):
     path: str
     dependencies: Literal["none", "poetry"]
 
+class ModelResource(BaseModel):
+    """
+    
+    """
+    resource_type: Literal["model"]
+    repo: str
+    hash: str
+    path: str
 
-Resource = Annotated[Union[FileResource, GitResource], Field(discriminator="resource_type")]
+
+class DatasetResource(BaseModel):
+    """
+    
+    """
+    resource_type: Literal["dataset"]
+    repo: str
+    hash: str
+    path: str
+
+Resource = Annotated[Union[FileResource, GitResource, ModelResource, DatasetResource], Field(discriminator="resource_type")]
 
 
 class Build(BaseModel):
