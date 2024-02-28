@@ -12,7 +12,7 @@ Endpoints:
 """
 
 import base64
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +21,7 @@ import uvicorn
 import hashlib
 
 from aicert_common.protocol import Build, Serve, FileList
+from .config_parser import AxolotlConfig
 from .builder import Builder, SIMULATION_MODE
 from .tpm import tpm_extend_pcr
 
@@ -96,10 +97,23 @@ def aTLS() -> Response:
 
 
 @app.post("/build_axolotl")
-def build_axolotl(build_request: Build, config_file: UploadFile) -> Response:
+async def build_axolotl(build_request: Build, config_file: UploadFile) -> Response:
+    # initialize config
+    config_str = await config_file.read().decode("utf-8")
+
+
+    AxolotlConfig.initialize(config_str)
+    # parsing the config file
+
     # Starts the build and measurements with axolotl
     # parses the yaml file supplied by the user for axolotl
     # and prepares axolotl to be ran with it 
+
+    axolotl_config = AxolotlConfig.parse(WORKSPACE)
+    axolotl_config_location = WORKSPACE = "/user_axolotl_config.yaml"
+    with open(axolotl_config_location, 'wb') as config:
+        config.write(axolotl_config)
+
     Builder.build_axolotl_inputs(build_request, WORKSPACE)
 
     return jsonable_encoder(
