@@ -12,7 +12,7 @@ Endpoints:
 """
 
 import base64
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -96,19 +96,14 @@ def aTLS() -> Response:
 
 
 @app.post("/build_axolotl")
-def build_axolotl(build_request: Build) -> Response:
+def build_axolotl(build_request: Build, config_file: UploadFile) -> Response:
     # Starts the build and measurements with axolotl
     # parses the yaml file supplied by the user for axolotl
     # and prepares axolotl to be ran with it 
-
+    Builder.build_axolotl_inputs(build_request, WORKSPACE)
 
     return jsonable_encoder(
-        Builder.build_axolotl_inputs(build_request, WORKSPACE), 
-        custom_encoder={
-            bytes: lambda v: {
-                "base64": base64.b64encode(v).decode("utf-8")
-            }
-        },
+            ""
     )
 
 
