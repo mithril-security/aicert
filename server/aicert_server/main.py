@@ -96,12 +96,14 @@ def aTLS() -> Response:
 
 
 @app.post("/build_axolotl")
-def build_axolotl() -> Response:
+def build_axolotl(build_request: Build) -> Response:
     # Starts the build and measurements with axolotl
     # parses the yaml file supplied by the user for axolotl
     # and prepares axolotl to be ran with it 
+
+
     return jsonable_encoder(
-        Builder.build_axolotl(), 
+        Builder.build_axolotl_inputs(build_request, WORKSPACE), 
         custom_encoder={
             bytes: lambda v: {
                 "base64": base64.b64encode(v).decode("utf-8")

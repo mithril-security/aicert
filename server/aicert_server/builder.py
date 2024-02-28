@@ -12,7 +12,7 @@ from .event_log import EventLog
 
 
 docker_client = docker.from_env()
-BASE_IMAGE = "mithrilsecuritysas/aicertbase:latest"
+BASE_IMAGE = "aicertbase:latest"
 AXOLOTL_IMAGE = "winglian/axolotl:main-py3.11-cu121-2.1.2"
 AXOLOTL_IMAGE_HASH = "sha256:3c9bd953fb315be836dbf1c8a41745a1090b148852576c90315ec76fc2c01793"
 SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
@@ -173,13 +173,21 @@ class Builder:
                 workspace=workspace / path,
             )
             resource_hash = f"sha1:{resource_hash}"
-        elif spec.resource_type == "model":
-            resource_hash = spec.hash
+        elif spec.resource_type == "model" or spec.resource_type == "dataset":
             cls.__docker_run(
                 cmd=CmdLine(
-                    []
-                )
+                    ["git", "clone", spec.repo, path],
+                    ["cd", path], 
+                    ["git", "fetch", "origin", spec.hash], 
+                    ["git", "reset", "--hard", "FETCH_HEAD"]
+                ),
+                workspace=workspace,
             )
+            resource_hash = cls.__docker_run(
+                cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
+                workspace=workspace / path,
+            )
+            resource_hash = f"sha1:{resource_hash}"
         else:
             download_path = (
                 f"/tmp/000_aicert_{str(path).replace('/', '_')}"
@@ -362,18 +370,17 @@ class Builder:
             cls.__thread.start()
 
 
-    @classmethod
-    def serve_axolotl(cls, build_request: Build, workspace: Path) -> None : 
-        """ Builds the axolotl image and downloads the requested inputs to 
-            be ran with.
+    # @classmethod
+    # def serve_axolotl(cls, build_request: Build, workspace: Path) -> None : 
+    #     """ Builds the axolotl image and downloads the requested inputs to 
+    #         be ran with.
         
-            1. Builds with the Axolotl image specified with the const AXOLOTL_IMAGE
-            2. fetch the resources 
-            3. 
+    #         1. Builds with the Axolotl image specified with the const AXOLOTL_IMAGE
+    #         2. fetch the resources 
+    #         3. 
         
         
-        """
-        with cls.__thread_lock:
-            if cls.__thread is not None and cls.__thread.is_alive():
+    #     """
+    #     with cls.__thread_lock:
+    #         if cls.__thread is not None and cls.__thread.is_alive():
                 
-        
