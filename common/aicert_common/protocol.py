@@ -48,26 +48,23 @@ class GitResource(BaseModel):
     path: str
     dependencies: Literal["none", "poetry"]
 
-class ModelResource(BaseModel):
+class AxolotlResource(BaseModel):
     """
-    
+    Model resource definition
+
+    Attributes: 
+        resource_type (Literal["model"]): resource type
+        repo (str): Huggingface repo 
+        hash (str): commit hash or version requested
+        path (str): installation path
     """
-    resource_type: Literal["model"]
+    resource_type: Literal["model", "dataset"]
     repo: str
     hash: str
     path: str
 
 
-class DatasetResource(BaseModel):
-    """
-    
-    """
-    resource_type: Literal["dataset"]
-    repo: str
-    hash: str
-    path: str
-
-Resource = Annotated[Union[FileResource, GitResource, ModelResource, DatasetResource], Field(discriminator="resource_type")]
+Resource = Annotated[Union[FileResource, GitResource, AxolotlResource], Field(discriminator="resource_type")]
 
 
 class Build(BaseModel):
