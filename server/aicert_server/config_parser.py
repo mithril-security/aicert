@@ -1,5 +1,4 @@
 import yaml 
-import hashlib
 from aicert_common.protocol import Resource
 
 
