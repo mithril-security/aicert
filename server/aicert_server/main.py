@@ -96,29 +96,25 @@ def aTLS() -> Response:
     )
 
 
-@app.post("/build_axolotl")
-async def build_axolotl(build_request: Build, config_file: UploadFile) -> Response:
+@app.post("/build_axolotl", status_code=202)
+async def build_axolotl(build_request: Build, config_file: UploadFile) -> None:
     # initialize config
     config_str = await config_file.read().decode("utf-8")
 
-
-    AxolotlConfig.initialize(config_str)
-    # parsing the config file
-
-    # Starts the build and measurements with axolotl
-    # parses the yaml file supplied by the user for axolotl
-    # and prepares axolotl to be ran with it 
-
-    axolotl_config = AxolotlConfig.parse(WORKSPACE)
-    axolotl_config_location = WORKSPACE = "/user_axolotl_config.yaml"
+    axolotl_config = AxolotlConfig()
+    axolotl_config.initialize(config_str)
+    axolotl_config.parse(WORKSPACE)
+    axolotl_config_location = WORKSPACE+"/user_axolotl_config.yaml"
     with open(axolotl_config_location, 'wb') as config:
         config.write(axolotl_config)
+    # Adding resources to Build request 
+    # contained into the AxolotlConfig Object 
+    build_request.inputs.append(axolotl_config.model_resource)
+    build_request.inputs.append(axolotl_config.dataset_resource)
+    print(build_request)
 
     Builder.build_axolotl_inputs(build_request, WORKSPACE)
 
-    return jsonable_encoder(
-            ""
-    )
 
 
 def main():

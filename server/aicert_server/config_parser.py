@@ -1,5 +1,6 @@
 import yaml 
 from aicert_common.protocol import Resource
+import sys
 
 
 class AxolotlConfig:
@@ -13,10 +14,10 @@ class AxolotlConfig:
     filename: str
     valid: bool = False
 
-    __modelname: str
-    __modelhash: str
-    __datasetname: str
-    __datasethash: str
+    __modelname: str = ""
+    __modelhash: str = ""
+    __datasetname: str = ""
+    __datasethash: str = ""
 
     model_resource : Resource
     dataset_resource : Resource
@@ -42,18 +43,19 @@ class AxolotlConfig:
 
         
         """
-        cls.__modelname, cls.__modelhash = cls.config.base_model.split("@")
+        cls.__modelname, cls.__modelhash = cls.config['base_model'].split("@")
     
     @classmethod
     def __extract_dataset(cls) -> None:
         """Extracts the dataset repo and the hash
         
         """
-        cls.__datasetname, cls.__datasethash = cls.config.datasets.path.split("@")
+        print(cls.config.datasets.path, file=sys.stderr)
+        cls.__datasetname, cls.__datasethash = cls.config['datasets'][0]['path'].split("@")
     
     @classmethod 
     def initialize(cls, config_file: str):
-        cls.config = config_file
+        cls.__verify_config_file(config_file)
         try:
             AxolotlConfig.__extract_model()
             AxolotlConfig.__extract_dataset()
@@ -61,7 +63,7 @@ class AxolotlConfig:
             print("Error when splitting")
 
     @classmethod
-    def parse(cls, resource_path) -> dict:
+    def parse(cls, resource_path) -> None:
         """Setup resources ModelResource & datasetResource
             Setup the axolotl configuration and changing the model name
             and the dataset path 
@@ -69,24 +71,23 @@ class AxolotlConfig:
             Returns the Axolotl configuration to be saved in workspace for 
             usage 
         """
-        cls.model_resource = Resource(
-            resource_type="model", 
-            repo=cls.__modelname,
-            hash=cls.__modelhash,
-            path=resource_path
-        )
+        cls.model_resource = {
+            'resource_type':'model', 
+            'repo' : cls.__modelname,
+            'hash' : cls.__modelhash,
+            'path' : resource_path
+        }
         
-        cls.dataset_resource = Resource(
-            resource_type="dataset",
-            repo=cls.__datasetname,
-            hash=cls.__datasethash,
-            path=resource_path
-        )
+        cls.dataset_resource = {
+            'resource_type' : "dataset",
+            'repo' : cls.__datasetname,
+            'hash' : cls.__datasethash,
+            'path' : resource_path
+        }
+    
 
-        cls.config.base_model = cls.__modelname
-        cls.config.datasets.path = cls.__datasetname
-
-        return cls.config
+        cls.config['base_model'] = cls.__modelname
+        cls.config['datasets'][0]['path'] = cls.__datasetname
 
 
 
