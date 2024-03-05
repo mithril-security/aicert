@@ -1,11 +1,14 @@
 import pytest 
 from fastapi import FastAPI
-from typing import Generator
+from typing import Generator, Any
 from fastapi.testclient import TestClient
+
+from aicert_server.main import app
+
 
 
 def start_application():
-    app = FastAPI()
+    # app = FastAPI()
     return app
 
 

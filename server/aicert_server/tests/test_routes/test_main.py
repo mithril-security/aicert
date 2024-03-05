@@ -2,8 +2,8 @@ from fastapi.testclient import TestClient
 import os
 import pytest
 from aicert_common.protocol import Build, Resource
-from .config_parser import AxolotlConfig
-from .main import app
+from aicert_server.config_parser import AxolotlConfig
+from aicert_server.main import app
 
 
 test_client = TestClient(app)
@@ -11,7 +11,7 @@ test_client = TestClient(app)
 def test_parsing_axolotl():
     print("testing axolotl parsing")
     config_content = ''
-    config_test_path = "./qlora_test.yml"
+    config_test_path = "qlora_test.yml"
 
     with open(config_test_path, 'rb') as file:
         config_content = file.read()
