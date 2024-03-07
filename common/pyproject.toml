@@ -8,7 +8,7 @@ packages = [{include = "aicert_common"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pydantic = { version = "^1.10.7" }
+pydantic = { version = "^2.6.3" }
 rich = "^13.4.2"
 
 

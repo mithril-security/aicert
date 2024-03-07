@@ -50,17 +50,14 @@ class AxolotlConfig:
         """Extracts the dataset repo and the hash
         
         """
-        print(cls.config.datasets.path, file=sys.stderr)
+
         cls.__datasetname, cls.__datasethash = cls.config['datasets'][0]['path'].split("@")
     
     @classmethod 
     def initialize(cls, config_file: str):
         cls.__verify_config_file(config_file)
-        try:
-            AxolotlConfig.__extract_model()
-            AxolotlConfig.__extract_dataset()
-        except:
-            print("Error when splitting")
+        AxolotlConfig.__extract_model()
+        AxolotlConfig.__extract_dataset()
 
     @classmethod
     def parse(cls, resource_path) -> None:
@@ -75,14 +72,14 @@ class AxolotlConfig:
             'resource_type':'model', 
             'repo' : cls.__modelname,
             'hash' : cls.__modelhash,
-            'path' : resource_path
+            'path' : str(resource_path)
         }
         
         cls.dataset_resource = {
             'resource_type' : "dataset",
             'repo' : cls.__datasetname,
             'hash' : cls.__datasethash,
-            'path' : resource_path
+            'path' : str(resource_path)
         }
     
 

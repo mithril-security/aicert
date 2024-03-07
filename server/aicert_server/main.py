@@ -14,11 +14,13 @@ Endpoints:
 import base64
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
 import hashlib
+import yaml
+import logging
 
 from aicert_common.protocol import Build, Serve, FileList
 from .config_parser import AxolotlConfig
@@ -31,10 +33,13 @@ PCR_FOR_CERTIFICATE = 15
 WORKSPACE = Path.cwd() / "workspace"
 WORKSPACE.mkdir(exist_ok=SIMULATION_MODE)
 
+# Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 app.mount("/outputs", StaticFiles(directory=WORKSPACE), name="outputs")
-
+axolotl_config = AxolotlConfig()
 
 @app.get("/outputs")
 def list_outputs(pattern: str) -> FileList:
@@ -96,25 +101,41 @@ def aTLS() -> Response:
     )
 
 
-@app.post("/build_axolotl", status_code=202)
-async def build_axolotl(build_request: Build, config_file: UploadFile) -> None:
-    # initialize config
-    config_str = await config_file.read().decode("utf-8")
 
-    axolotl_config = AxolotlConfig()
+### Axolotl endpoints
+@app.post("/axolotl/configuration")
+async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
+    # initialize config
+    print("Setting up axolotl configuration.")
+    config_str = await file.read()
+
+
     axolotl_config.initialize(config_str)
     axolotl_config.parse(WORKSPACE)
-    axolotl_config_location = WORKSPACE+"/user_axolotl_config.yaml"
+
+    axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
+    serialized_config = yaml.dump(axolotl_config.config)
+    print(serialized_config)
+
     with open(axolotl_config_location, 'wb') as config:
-        config.write(axolotl_config)
+        config.write(serialized_config.encode("utf-8"))
+
+    
+
+
+    # Builder.build_axolotl_inputs(build_request, WORKSPACE)
+    return JSONResponse(content={"yaml file status": "OK"})
+
+@app.post("/axolotl/build")
+def build_axolotl(build_request: Build) -> JSONResponse:
     # Adding resources to Build request 
     # contained into the AxolotlConfig Object 
+    logger.info("testing logging inside build axolotl")
     build_request.inputs.append(axolotl_config.model_resource)
     build_request.inputs.append(axolotl_config.dataset_resource)
-    print(build_request)
-
-    Builder.build_axolotl_inputs(build_request, WORKSPACE)
-
+    logger.info(build_request)
+    Builder.submit_build(build_request, WORKSPACE)
+    return JSONResponse(content={"build instruction": "sent"})
 
 
 def main():

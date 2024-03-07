@@ -2,8 +2,13 @@ import pytest
 from fastapi import FastAPI
 from typing import Generator, Any
 from fastapi.testclient import TestClient
+import logging
 
 from aicert_server.main import app
+
+
+# @pytest.fixture(autouse=True)
+# def configure_logging():
 
 
 
