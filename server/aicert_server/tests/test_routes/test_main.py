@@ -1,6 +1,4 @@
 from fastapi.testclient import TestClient
-import os
-import pytest
 from pydantic import TypeAdapter
 from typing import List
 from aicert_common.protocol import Build, Resource
@@ -115,13 +113,6 @@ special_tokens:
 axolotl_config.initialize(config_file=configuration_test)
 axolotl_config.parse(WORKSPACE)
 def test_build_axolotl():
-    print("\ntesting build_axolotl endpoint")
-    # model_resource = AxolotlResource(
-    #     resource_type="model",
-    #     repo="https://huggingface.co/codellama/CodeLlama-7b-hf",
-    #     hash="7f22f0a5f7991355a2c3867923359ec4ed0b58bf",
-    #     path=str(WORKSPACE)
-    # )
     model_resource = [{
         "resource_type":"model",
         "repo":"https://huggingface.co/codellama/CodeLlama-7b-hf",
