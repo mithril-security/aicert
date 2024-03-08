@@ -44,6 +44,8 @@ class AxolotlConfig:
         
         """
         cls.__modelname, cls.__modelhash = cls.config['base_model'].split("@")
+        cls.__modelhash = cls.__modelhash.split(":")[1]
+
     
     @classmethod
     def __extract_dataset(cls) -> None:
@@ -52,6 +54,7 @@ class AxolotlConfig:
         """
 
         cls.__datasetname, cls.__datasethash = cls.config['datasets'][0]['path'].split("@")
+        cls.__datasethash = cls.__datasethash.split(":")[1]
     
     @classmethod 
     def initialize(cls, config_file: str):
@@ -85,6 +88,3 @@ class AxolotlConfig:
 
         cls.config['base_model'] = cls.__modelname
         cls.config['datasets'][0]['path'] = cls.__datasetname
-
-
-

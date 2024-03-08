@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from threading import Lock, Thread
 from typing import Union, Dict, Any, Optional
+import logging
 
 from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
@@ -16,7 +17,9 @@ BASE_IMAGE = "aicertbase:latest"
 AXOLOTL_IMAGE = "winglian/axolotl:main-py3.11-cu121-2.1.2"
 AXOLOTL_IMAGE_HASH = "sha256:3c9bd953fb315be836dbf1c8a41745a1090b148852576c90315ec76fc2c01793"
 SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
-
+# Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def sha256_file(file_path) -> str:
     """Returns the SHA256 hash of a file"""
@@ -311,6 +314,7 @@ class Builder:
             workspace (Path): directory where inputs are downloaded and that will
                 be mounted on the build container at /mnt
         """
+        logger.info(build_request)
         with cls.__thread_lock:
             if cls.__used:
                 raise HTTPException(
@@ -355,19 +359,19 @@ class Builder:
             else:
                 return False
     
-    @classmethod
-    def build_axolotl_inputs(cls, build_request: Build, workspace: Path) -> None:
-        """
+    # @classmethod
+    # def build_axolotl_inputs(cls, build_request: Build, workspace: Path) -> None:
+    #     """
         
-        """
-        with cls.__thread_lock:
-            if cls.__used:
-                return HTTPException(
-                    status_code=409, detail=f"Cannot build more than once"
-                )
-            cls.__used = True
-            cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace))
-            cls.__thread.start()
+    #     """
+    #     with cls.__thread_lock:
+    #         if cls.__used:
+    #             return HTTPException(
+    #                 status_code=409, detail=f"Cannot build more than once"
+    #             )
+    #         cls.__used = True
+    #         cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace))
+    #         cls.__thread.start()
 
 
     # @classmethod

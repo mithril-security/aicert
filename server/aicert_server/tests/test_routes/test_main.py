@@ -3,7 +3,7 @@ import os
 import pytest
 from pydantic import TypeAdapter
 from typing import List
-from aicert_common.protocol import Build, Resource, AxolotlResource
+from aicert_common.protocol import Build, Resource
 from aicert_server.config_parser import AxolotlConfig
 from aicert_server.main import app
 from pathlib import Path
@@ -130,14 +130,14 @@ def test_build_axolotl():
     }]
     ResourceListAdapter = TypeAdapter(List[Resource])
     build_request = Build(
-        image="aicertbase",
-        cmdline="git version",
+        image="mithrilsecuritysas/aicertbase",
+        cmdline="/bin/sh -c 'apt update && apt install -y build-essential && echo Hello > hello_world.txt",
         inputs=ResourceListAdapter.validate_python(model_resource),
-        outputs="",
-    ).json()
+        outputs="hello_world.txt",
+    ).model_dump_json()
 
     response = test_client.post("/axolotl/build", data=build_request, headers={"Content-Type": "application/json"})
-    print(response)
+    print(response.content)
     assert response.status_code == 200
 
 

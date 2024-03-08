@@ -16,13 +16,15 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import TypeAdapter
+from typing import List
 from pathlib import Path
 import uvicorn
 import hashlib
 import yaml
 import logging
 
-from aicert_common.protocol import Build, Serve, FileList
+from aicert_common.protocol import Build, Serve, FileList, Resource
 from .config_parser import AxolotlConfig
 from .builder import Builder, SIMULATION_MODE
 from .tpm import tpm_extend_pcr
@@ -130,10 +132,11 @@ async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
 def build_axolotl(build_request: Build) -> JSONResponse:
     # Adding resources to Build request 
     # contained into the AxolotlConfig Object 
+    resources = [axolotl_config.model_resource, axolotl_config.dataset_resource]
+    ResourceListAdapter = TypeAdapter(List[Resource])
     logger.info("testing logging inside build axolotl")
-    build_request.inputs.append(axolotl_config.model_resource)
-    build_request.inputs.append(axolotl_config.dataset_resource)
-    logger.info(build_request)
+    build_request.inputs = ResourceListAdapter.validate_python(resources)
+    logger.info(build_request.model_dump_json())
     Builder.submit_build(build_request, WORKSPACE)
     return JSONResponse(content={"build instruction": "sent"})
 
