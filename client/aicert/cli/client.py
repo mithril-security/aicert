@@ -312,6 +312,21 @@ class Client:
             "Cannot submit build to server",
         )
     
+    # def submit_config(self, yaml_config: str) -> None:
+    #     """
+    #         Sends a yaml axolotl configuration format
+
+    #     Args:
+    #         yaml_config: Path to file upload
+    #     """
+
+    #     raise_for_status(
+    #         self.__session.post(
+    #             f"{self.__base_url}/axolotl/configuration",
+    #             data
+    #         )
+    #     )
+
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
         """Send a submit_serve request to the runner
 

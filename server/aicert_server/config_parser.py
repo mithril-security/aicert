@@ -1,6 +1,5 @@
 import yaml 
 from aicert_common.protocol import Resource
-import sys
 
 
 class AxolotlConfig:
@@ -73,14 +72,14 @@ class AxolotlConfig:
         """
         cls.model_resource = {
             'resource_type':'model', 
-            'repo' : cls.__modelname,
+            'repo' : "https://huggingface.co/" + cls.__modelname,
             'hash' : cls.__modelhash,
             'path' : str(resource_path)
         }
         
         cls.dataset_resource = {
             'resource_type' : "dataset",
-            'repo' : cls.__datasetname,
+            'repo' : "https://huggingface.co/" + cls.__datasetname,
             'hash' : cls.__datasethash,
             'path' : str(resource_path)
         }

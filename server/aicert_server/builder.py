@@ -13,7 +13,7 @@ from .event_log import EventLog
 
 
 docker_client = docker.from_env()
-BASE_IMAGE = "aicertbase:latest"
+BASE_IMAGE = "@local/aicertbase:latest"
 AXOLOTL_IMAGE = "winglian/axolotl:main-py3.11-cu121-2.1.2"
 AXOLOTL_IMAGE_HASH = "sha256:3c9bd953fb315be836dbf1c8a41745a1090b148852576c90315ec76fc2c01793"
 SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
@@ -142,6 +142,7 @@ class Builder:
             spec (Resource): specification of the resource (see aicert-common's protocol)
             workspace (Union[str, Path]): host's working directory
         """
+     
         path = Path(spec.path)
         if path.is_absolute():
             raise HTTPException(
@@ -149,6 +150,9 @@ class Builder:
             )
 
         resource_hash = ""
+        logger.info("ressource type is : ")
+        logger.info(spec.resource_type)
+
         if spec.resource_type == "git":
             cls.__docker_run(
                 cmd=CmdLine(
@@ -257,8 +261,10 @@ class Builder:
 
                 # install inputs
                 for input in build_request.inputs:
+                    logger.info("input processed is ")
+                    logger.info(input)
                     cls.__fetch_resource(input, workspace)
-
+                    logger.info("is input processed ? or is it just private?")
                 cls.__docker_run(
                     image=build_request.image,
                     cmd=build_request.cmdline,
@@ -359,32 +365,3 @@ class Builder:
             else:
                 return False
     
-    # @classmethod
-    # def build_axolotl_inputs(cls, build_request: Build, workspace: Path) -> None:
-    #     """
-        
-    #     """
-    #     with cls.__thread_lock:
-    #         if cls.__used:
-    #             return HTTPException(
-    #                 status_code=409, detail=f"Cannot build more than once"
-    #             )
-    #         cls.__used = True
-    #         cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace))
-    #         cls.__thread.start()
-
-
-    # @classmethod
-    # def serve_axolotl(cls, build_request: Build, workspace: Path) -> None : 
-    #     """ Builds the axolotl image and downloads the requested inputs to 
-    #         be ran with.
-        
-    #         1. Builds with the Axolotl image specified with the const AXOLOTL_IMAGE
-    #         2. fetch the resources 
-    #         3. 
-        
-        
-    #     """
-    #     with cls.__thread_lock:
-    #         if cls.__thread is not None and cls.__thread.is_alive():
-                

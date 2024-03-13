@@ -111,19 +111,13 @@ async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
     print("Setting up axolotl configuration.")
     config_str = await file.read()
 
-
     axolotl_config.initialize(config_str)
-    axolotl_config.parse(WORKSPACE)
-
+    axolotl_config.parse('workspace')
     axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
     serialized_config = yaml.dump(axolotl_config.config)
     print(serialized_config)
-
     with open(axolotl_config_location, 'wb') as config:
         config.write(serialized_config.encode("utf-8"))
-
-    
-
 
     # Builder.build_axolotl_inputs(build_request, WORKSPACE)
     return JSONResponse(content={"yaml file status": "OK"})

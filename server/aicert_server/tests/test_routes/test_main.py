@@ -3,6 +3,7 @@ from pydantic import TypeAdapter
 from typing import List
 from aicert_common.protocol import Build, Resource
 from aicert_server.config_parser import AxolotlConfig
+from aicert_server.builder import Builder
 from aicert_server.main import app
 from pathlib import Path
 
@@ -38,6 +39,24 @@ def test_config_axolotl():
     print(response.content)
     assert response.status_code == 200, response.text
 
+
+# def test_builder():
+#     print("Testing Builder object features")
+#     model_resource = [{
+#         "resource_type":"model",
+#         "repo":"https://huggingface.co/codellama/CodeLlama-7b-hf",
+#         "hash": "7f22f0a5f7991355a2c3867923359ec4ed0b58bf",
+#         "path": str(WORKSPACE)
+#     }]
+#     ResourceListAdapter = TypeAdapter(List[Resource])
+#     build_request = Build(
+#         image="mithrilsecuritysas/aicertbase",
+#         cmdline="/bin/sh -c 'apt update && apt install -y build-essential && echo Hello > hello_world.txt",
+#         inputs=ResourceListAdapter.validate_python(model_resource),
+#         outputs="hello_world.txt",
+#     ).model_dump_json()
+
+#     Builder.submit_build(build_request=build_request, workspace=WORKSPACE)
 
 axolotl_config = AxolotlConfig()
 configuration_test = """
@@ -117,7 +136,7 @@ def test_build_axolotl():
         "resource_type":"model",
         "repo":"https://huggingface.co/codellama/CodeLlama-7b-hf",
         "hash": "7f22f0a5f7991355a2c3867923359ec4ed0b58bf",
-        "path": str(WORKSPACE)
+        "path": './'
     }]
     ResourceListAdapter = TypeAdapter(List[Resource])
     build_request = Build(
@@ -130,5 +149,7 @@ def test_build_axolotl():
     response = test_client.post("/axolotl/build", data=build_request, headers={"Content-Type": "application/json"})
     print(response.content)
     assert response.status_code == 200
+
+
 
 
