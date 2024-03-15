@@ -61,7 +61,7 @@ def list_outputs(pattern: str) -> FileList:
 
 @app.post("/submit_build", status_code=202)
 def submit_build(build_request: Build) -> None:
-    Builder.submit_build(build_request, WORKSPACE)
+    Builder.submit_build(build_request, WORKSPACE, axolotl_config)
 
 
 @app.post("/submit_serve", status_code=202)
@@ -112,7 +112,7 @@ async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
     config_str = await file.read()
 
     axolotl_config.initialize(config_str)
-    axolotl_config.parse('workspace')
+    axolotl_config.parse()
     axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
     serialized_config = yaml.dump(axolotl_config.config)
     print(serialized_config)
@@ -122,17 +122,17 @@ async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
     # Builder.build_axolotl_inputs(build_request, WORKSPACE)
     return JSONResponse(content={"yaml file status": "OK"})
 
-@app.post("/axolotl/build")
-def build_axolotl(build_request: Build) -> JSONResponse:
-    # Adding resources to Build request 
-    # contained into the AxolotlConfig Object 
-    resources = [axolotl_config.model_resource, axolotl_config.dataset_resource]
-    ResourceListAdapter = TypeAdapter(List[Resource])
-    logger.info("testing logging inside build axolotl")
-    build_request.inputs = ResourceListAdapter.validate_python(resources)
-    logger.info(build_request.model_dump_json())
-    Builder.submit_build(build_request, WORKSPACE)
-    return JSONResponse(content={"build instruction": "sent"})
+#@app.post("/axolotl/build")
+#def build_axolotl(build_request: Build) -> JSONResponse:
+#    # Adding resources to Build request 
+#    # contained into the AxolotlConfig Object 
+#    resources = [axolotl_config.model_resource, axolotl_config.dataset_resource]
+#    ResourceListAdapter = TypeAdapter(List[Resource])
+#    logger.info("testing logging inside build axolotl")
+#    build_request.inputs = ResourceListAdapter.validate_python(resources)
+#    logger.info(build_request.model_dump_json())
+#    Builder.submit_build(build_request, WORKSPACE)
+#    return JSONResponse(content={"build instruction": "sent"})
 
 
 def main():

@@ -48,6 +48,7 @@ class GitResource(BaseModel):
     path: str
     dependencies: Literal["none", "poetry"]
 
+
 class AxolotlResource(BaseModel):
     """
     Model resource definition
@@ -65,6 +66,16 @@ class AxolotlResource(BaseModel):
 
 
 Resource = Annotated[Union[FileResource, GitResource, AxolotlResource], Field(discriminator="resource_type")]
+
+
+class Framework(BaseModel):
+    """
+    Defines framework to use for build request
+    
+    Attributes:
+        framework (Literal["default", "axolotl"])
+    """
+    framework: Literal["default", "axolotl"]
 
 
 class Build(BaseModel):
@@ -96,6 +107,7 @@ class Build(BaseModel):
     cmdline: str
     inputs: List[Resource]
     outputs: str
+    framework: Framework
 
 
 class Runner(BaseModel):

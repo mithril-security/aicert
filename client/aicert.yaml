@@ -10,6 +10,7 @@ build:
       path: src
       dependencies: none
   outputs: helloworld
+  framework: default
 runner:
   daemon: "http://127.0.0.1:8082"
   platform: "azure-tpm"

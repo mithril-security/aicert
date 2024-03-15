@@ -1,5 +1,7 @@
 import yaml 
 from aicert_common.protocol import Resource
+from typing import List
+from pydantic import TypeAdapter
 
 
 class AxolotlConfig:
@@ -20,6 +22,7 @@ class AxolotlConfig:
 
     model_resource : Resource
     dataset_resource : Resource
+    resources: List[Resource]
 
     config: dict
 
@@ -62,7 +65,7 @@ class AxolotlConfig:
         AxolotlConfig.__extract_dataset()
 
     @classmethod
-    def parse(cls, resource_path) -> None:
+    def parse(cls) -> None:
         """Setup resources ModelResource & datasetResource
             Setup the axolotl configuration and changing the model name
             and the dataset path 
@@ -74,16 +77,20 @@ class AxolotlConfig:
             'resource_type':'model', 
             'repo' : "https://huggingface.co/" + cls.__modelname,
             'hash' : cls.__modelhash,
-            'path' : str(resource_path)
+            'path' : "model/" + cls.__modelname
         }
         
         cls.dataset_resource = {
             'resource_type' : "dataset",
-            'repo' : "https://huggingface.co/" + cls.__datasetname,
+            'repo' : "https://huggingface.co/datasets/" + cls.__datasetname,
             'hash' : cls.__datasethash,
-            'path' : str(resource_path)
+            'path' : "dataset/" + cls.__datasetname
         }
-    
+
+        cls.resources = [cls.model_resource, cls.dataset_resource]
+
+        ResourceListAdapter = TypeAdapter(List[Resource])
+        cls.resources = ResourceListAdapter.validate_python(cls.resources)
 
         cls.config['base_model'] = cls.__modelname
         cls.config['datasets'][0]['path'] = cls.__datasetname

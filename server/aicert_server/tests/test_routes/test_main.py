@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
-from typing import List
-from aicert_common.protocol import Build, Resource
+from typing import List, Literal
+from aicert_common.protocol import Build, Resource, Framework
 from aicert_server.config_parser import AxolotlConfig
 from aicert_server.builder import Builder
 from aicert_server.main import app
@@ -130,7 +130,7 @@ special_tokens:
 """
 
 axolotl_config.initialize(config_file=configuration_test)
-axolotl_config.parse(WORKSPACE)
+axolotl_config.parse()
 def test_build_axolotl():
     model_resource = [{
         "resource_type":"model",
@@ -139,17 +139,23 @@ def test_build_axolotl():
         "path": './'
     }]
     ResourceListAdapter = TypeAdapter(List[Resource])
+    framework={"framework": "axolotl"}
+    FrameworkAdapter = TypeAdapter(Framework)
     build_request = Build(
         image="mithrilsecuritysas/aicertbase",
-        cmdline="/bin/sh -c 'apt update && apt install -y build-essential && echo Hello > hello_world.txt",
+        cmdline="/bin/sh -c 'apt update && apt install -y build-essential && git lfs install && echo Hello > hello_world.txt'",
         inputs=ResourceListAdapter.validate_python(model_resource),
         outputs="hello_world.txt",
+        framework=FrameworkAdapter.validate_python(framework),
     ).model_dump_json()
 
-    response = test_client.post("/axolotl/build", data=build_request, headers={"Content-Type": "application/json"})
+    #response = test_client.post("/axolotl/build", data=build_request, headers={"Content-Type": "application/json"})
+    response = test_client.post("/submit_build", data=build_request, headers={"Content-Type": "application/json"})
     print(response.content)
-    assert response.status_code == 200
+    assert response.status_code == 202
 
 
 
 
+test_config_axolotl()
+test_build_axolotl()

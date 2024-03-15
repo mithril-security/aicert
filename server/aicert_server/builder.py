@@ -10,6 +10,7 @@ import logging
 from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
 from .event_log import EventLog
+from .config_parser import AxolotlConfig
 
 
 docker_client = docker.from_env()
@@ -109,6 +110,11 @@ class Builder:
                 if image.startswith("@local/") else
                 docker_client.images.pull(image)
             )
+            print(docker_client.images.list())
+            print(docker_client.images.get("aicertbase"))
+            print(workspace.absolute())
+            print(cmd)
+            #logger.info(docker_client.images.get(image))
             cls.__event_log.input_image_event(image, resolved_image.id)
             cls.__resolved_images[image] = resolved_image
         else:
@@ -142,7 +148,7 @@ class Builder:
             spec (Resource): specification of the resource (see aicert-common's protocol)
             workspace (Union[str, Path]): host's working directory
         """
-     
+
         path = Path(spec.path)
         if path.is_absolute():
             raise HTTPException(
@@ -183,6 +189,7 @@ class Builder:
         elif spec.resource_type == "model" or spec.resource_type == "dataset":
             cls.__docker_run(
                 cmd=CmdLine(
+                    ["git", "lfs", "install"],
                     ["git", "clone", spec.repo, path],
                     ["cd", path], 
                     ["git", "fetch", "origin", spec.hash], 
@@ -242,7 +249,7 @@ class Builder:
         cls.__event_log.outputs_event(outputs)
 
     @classmethod
-    def __build_fn(cls, build_request: Build, workspace: Path) -> None:
+    def __build_fn(cls, build_request: Build, workspace: Path, axolotl_config: AxolotlConfig = AxolotlConfig()) -> None:
         """Private method: implements the build process, run by the build thread
 
         1. Add build request to the event log
@@ -258,6 +265,9 @@ class Builder:
         try:
             with cls.__event_log_lock:
                 cls.__register_build_request(build_request)
+
+                if build_request.framework.framework == "axolotl":
+                    build_request.inputs = axolotl_config.resources
 
                 # install inputs
                 for input in build_request.inputs:
@@ -310,7 +320,7 @@ class Builder:
             return cls.__event_log.attest()
 
     @classmethod
-    def submit_build(cls, build_request: Build, workspace: Path) -> None:
+    def submit_build(cls, build_request: Build, workspace: Path, axolotl_config: AxolotlConfig) -> None:
         """Start the execution of the build in a separate thread
 
         If a build has already been done, an exception is raised.
@@ -327,7 +337,7 @@ class Builder:
                     status_code=409, detail=f"Cannot build more than once"
                 )
             cls.__used = True
-            cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace))
+            cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace, axolotl_config))
             cls.__thread.start()
     
     @classmethod
