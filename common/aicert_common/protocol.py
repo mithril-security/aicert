@@ -105,7 +105,7 @@ class Build(BaseModel):
     """
     image: str
     cmdline: str
-    inputs: List[Resource]
+    inputs: Optional[List[Resource]]
     outputs: str
     framework: Framework
 

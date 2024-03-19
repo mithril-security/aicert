@@ -271,10 +271,8 @@ class Builder:
 
                 # install inputs
                 for input in build_request.inputs:
-                    logger.info("input processed is ")
                     logger.info(input)
                     cls.__fetch_resource(input, workspace)
-                    logger.info("is input processed ? or is it just private?")
                 cls.__docker_run(
                     image=build_request.image,
                     cmd=build_request.cmdline,
@@ -330,6 +328,7 @@ class Builder:
             workspace (Path): directory where inputs are downloaded and that will
                 be mounted on the build container at /mnt
         """
+
         logger.info(build_request)
         with cls.__thread_lock:
             if cls.__used:

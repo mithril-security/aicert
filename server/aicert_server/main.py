@@ -58,15 +58,21 @@ def list_outputs(pattern: str) -> FileList:
         ],
     )
 
-
-@app.post("/submit_build", status_code=202)
+# @app.post("/submit_build", status_code=202)
+@app.post("/build", status_code=202)
 def submit_build(build_request: Build) -> None:
     Builder.submit_build(build_request, WORKSPACE, axolotl_config)
 
+@app.get("/build/status", status_code=200)
+def build_status() -> None:
+    pass
 
-@app.post("/submit_serve", status_code=202)
+# @app.post("/submit_serve", status_code=202)
+@app.post("/start", status_code=202)
 def submit_serve(serve_request: Serve) -> None:
     Builder.submit_serve(serve_request, WORKSPACE)
+
+
 
 
 @app.get("/attestation")
@@ -119,20 +125,7 @@ async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
     with open(axolotl_config_location, 'wb') as config:
         config.write(serialized_config.encode("utf-8"))
 
-    # Builder.build_axolotl_inputs(build_request, WORKSPACE)
     return JSONResponse(content={"yaml file status": "OK"})
-
-#@app.post("/axolotl/build")
-#def build_axolotl(build_request: Build) -> JSONResponse:
-#    # Adding resources to Build request 
-#    # contained into the AxolotlConfig Object 
-#    resources = [axolotl_config.model_resource, axolotl_config.dataset_resource]
-#    ResourceListAdapter = TypeAdapter(List[Resource])
-#    logger.info("testing logging inside build axolotl")
-#    build_request.inputs = ResourceListAdapter.validate_python(resources)
-#    logger.info(build_request.model_dump_json())
-#    Builder.submit_build(build_request, WORKSPACE)
-#    return JSONResponse(content={"build instruction": "sent"})
 
 
 def main():
