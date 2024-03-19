@@ -305,7 +305,7 @@ class Client:
         build_cfg = build_cfg if build_cfg is not None else self.__cfg.build
         raise_for_status(
             self.__session.post(
-                f"{self.__base_url}/submit_build",
+                f"{self.__base_url}/build",
                 data=build_cfg.json(),
                 headers={"Content-Type": "application/json"},
             ),
@@ -338,7 +338,7 @@ class Client:
         if serve_cfg is not None:
             raise_for_status(
                 self.__session.post(
-                    f"{self.__base_url}/submit_serve",
+                    f"{self.__base_url}/start",
                     data=serve_cfg.json(),
                     headers={"Content-Type": "application/json"},
                 ),

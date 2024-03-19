@@ -68,6 +68,10 @@ class Builder:
     __exception: Optional[HTTPException] = None
     __resolved_images: Dict[str, Any] = {}
 
+    __finetune_lock = Lock()
+    __finetune_in_use = False
+    __finetune_thread = Optional[Thread] = None 
+
     __serve_thread_lock = Lock()
     __serve_ready = False
     __serve_image: Optional[str] = None
@@ -307,6 +311,39 @@ class Builder:
             working_dir="/mnt",
             ports={f'{serve_request.container_port}/tcp': serve_request.host_port}
         )
+
+    @classmethod
+    def __axolotl_run(cls, 
+        axolotl_config: AxolotlConfig
+        ) -> None:
+        pass
+
+    @classmethod
+    def __finetune_fn(cls,
+            workspace: Path, 
+            axolotl_config: AxolotlConfig, 
+            axolotl_image: str = AXOLOTL_IMAGE, 
+            axolotl_image_hash: str = AXOLOTL_IMAGE_HASH
+        ) -> None:
+        """Private method: starts the finetuning with axolotl and the data fetched previously 
+
+        Args: 
+            workspace (Path): directory to mount at /mnt on the container and 
+                that contains the result of the finetuning 
+        """
+
+        # Pulling the axolotl docker and measuring 
+        try: 
+            with cls.__event_log_lock:
+                pass
+
+        except HTTPException as e:
+            cls.__exception = e
+        except Exception as e:
+            print(f"error : {e}")
+            cls.__exception = HTTPException(status_code=500, detail=str(e))
+
+        
     
     @classmethod
     def get_attestation(cls, ca_cert = "") -> Dict[str, Any]:
@@ -358,6 +395,20 @@ class Builder:
             cls.__serve_thread = Thread(target=lambda: cls.__serve_fn(serve_request, workspace))
             cls.__serve_thread.start()
 
+    @classmethod
+    def start_finetune(cls, workspace: Path, axolotl_config: AxolotlConfig) -> None:
+        """
+        
+        """
+        with cls.__finetune_lock:
+            if cls.__finetune_in_use:
+                raise HTTPException(
+                    status_code=409, detail=f"Finetuning thread in use"
+                )
+            cls.__finetune_in_use = True
+            cls.__finetune_thread = Thread(target=lambda: cls.__finetune_fn(workspace, axolotl_config))
+            cls.__finetune_thread.start()
+    
     @classmethod
     def poll_build(cls) -> bool:
         """Check build status
