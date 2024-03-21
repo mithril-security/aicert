@@ -50,6 +50,10 @@ build_request = Build(
         framework=FrameworkAdapter.validate_python(framework),
 ).model_dump_json()
 resp_build = requests.post(url=url_build, data=build_request, headers={"Content-Type": "application/json"})
+
+url_finetune = "http://127.0.0.1/fineture"
+resp_finetune = requests.post(url=url_finetune)
+
 ```
 
 - [ ] Inputs must be removed as it is taken from the the configuration file. 

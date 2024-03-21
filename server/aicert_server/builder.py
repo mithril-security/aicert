@@ -68,9 +68,10 @@ class Builder:
     __exception: Optional[HTTPException] = None
     __resolved_images: Dict[str, Any] = {}
 
-    __finetune_lock = Lock()
-    __finetune_in_use = False
-    __finetune_thread = Optional[Thread] = None 
+    __fineture_thread_lock = Lock()
+    __fineture_thread_in_use = False
+    __finetune_thread: Optional[Thread] = None 
+    __finetune_framework : str = "axolotl"
 
     __serve_thread_lock = Lock()
     __serve_ready = False
@@ -86,12 +87,15 @@ class Builder:
         """
         cls.__event_log.build_request_event(build_request)
 
+    # TODO: adding gpu handling 
     @classmethod
     def __docker_run(
         cls,
         cmd: Union[str, CmdLine],
         workspace: Union[str, Path],
         image: str = BASE_IMAGE,
+        gpus: Optional[str] = "",
+        env: Optional[str] = ""
     ) -> str:
         """Private method: run command in a docker container, return stdout
 
@@ -114,8 +118,6 @@ class Builder:
                 if image.startswith("@local/") else
                 docker_client.images.pull(image)
             )
-            print(docker_client.images.list())
-            print(docker_client.images.get("aicertbase"))
             print(workspace.absolute())
             print(cmd)
             #logger.info(docker_client.images.get(image))
@@ -123,16 +125,43 @@ class Builder:
             cls.__resolved_images[image] = resolved_image
         else:
             resolved_image = cls.__resolved_images[image]
-        return (
-            docker_client.containers.run(
-                resolved_image,
-                str(cmd),
-                volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
-                working_dir="/mnt",
+
+        if gpus == "":
+            return (
+                docker_client.containers.run(
+                    resolved_image,
+                    str(cmd),
+                    volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
+                    working_dir="/mnt",
+
+                )
+                .decode("utf8")
+                .strip()
             )
-            .decode("utf8")
-            .strip()
-        )
+        else:
+            count = 0
+            try: 
+                count = int(gpus)
+            except ValueError as verr:
+                if gpus=="all":
+                    count = -1
+                else:
+                    logger.error("ValueError: gpu option not All and not integer")
+            except Exception as e: 
+                logger.exception(e)
+            return (
+                docker_client.containers.run(
+                    resolved_image,
+                    str(cmd),
+                    volumes={str(workspace.absolute()) : {"bind": "/mnt", "mode":"rw"}},
+                    working_dir="/mnt",
+                    device_requests=[
+                        docker.types.DeviceRequest(count=count, capabilities=[['gpu']])
+                    ]
+                )
+            )
+        
+
 
     @classmethod
     def __fetch_resource(cls, spec: Resource, workspace: Path) -> None:
@@ -271,6 +300,7 @@ class Builder:
                 cls.__register_build_request(build_request)
 
                 if build_request.framework.framework == "axolotl":
+                    cls.__finetune_framework = "axolotl"
                     build_request.inputs = axolotl_config.resources
 
                 # install inputs
@@ -314,18 +344,38 @@ class Builder:
 
     @classmethod
     def __axolotl_run(cls, 
-        axolotl_config: AxolotlConfig
+        axolotl_config: AxolotlConfig,
+        axolotl_image: str,
+        workspace: Path
         ) -> None:
-        pass
+        try: 
+            with cls.__event_log_lock:
+                cmd_accelerate = CmdLine(
+                    #['CUDA_VISIBLE_DEVICES=""', "python", "-m", "axolotl.cli.preprocess", axolotl_config.filename], # Axolotl preprocessing
+                    ["accelerate", "launch", "-m", "axolotl.cli.train", axolotl_config.filename],
+                )
+                cls.__docker_run(
+                    image=axolotl_image,
+                    cmd=cmd_accelerate,
+                    workspace=workspace,
+                    gpus='"all"'
+                )
+
+
+        except HTTPException as e:
+            cls.__exception = e
+        except Exception as e:
+            print(f"error : {e}")
+            cls.__exception = HTTPException(status_code=500, detail=str(e))
 
     @classmethod
     def __finetune_fn(cls,
             workspace: Path, 
             axolotl_config: AxolotlConfig, 
-            axolotl_image: str = AXOLOTL_IMAGE, 
-            axolotl_image_hash: str = AXOLOTL_IMAGE_HASH
+            finetune_image: str = AXOLOTL_IMAGE, 
+            finetune_image_hash: str = AXOLOTL_IMAGE_HASH
         ) -> None:
-        """Private method: starts the finetuning with axolotl and the data fetched previously 
+        """Private method: starts the finetuning with a framework (axolotl in this example) and the data fetched previously 
 
         Args: 
             workspace (Path): directory to mount at /mnt on the container and 
@@ -333,15 +383,14 @@ class Builder:
         """
 
         # Pulling the axolotl docker and measuring 
-        try: 
-            with cls.__event_log_lock:
-                pass
-
-        except HTTPException as e:
-            cls.__exception = e
-        except Exception as e:
-            print(f"error : {e}")
-            cls.__exception = HTTPException(status_code=500, detail=str(e))
+        finetune_image_hashed = finetune_image.split(":")[0]
+        finetune_image_hashed = finetune_image_hashed + "@" + finetune_image_hash
+        logger.info(finetune_image_hashed)
+        docker_client.images.pull(finetune_image_hashed)
+        logger.info(str(docker_client.images.list()))
+        if cls.__finetune_framework == "axolotl":
+            cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image_hashed, workspace=workspace)
+        
 
         
     
@@ -400,12 +449,12 @@ class Builder:
         """
         
         """
-        with cls.__finetune_lock:
-            if cls.__finetune_in_use:
+        with cls.__fineture_thread_lock:
+            if cls.__fineture_thread_in_use:
                 raise HTTPException(
                     status_code=409, detail=f"Finetuning thread in use"
                 )
-            cls.__finetune_in_use = True
+            cls.__fineture_thread_in_use = True
             cls.__finetune_thread = Thread(target=lambda: cls.__finetune_fn(workspace, axolotl_config))
             cls.__finetune_thread.start()
     

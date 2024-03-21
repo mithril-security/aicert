@@ -63,16 +63,23 @@ def list_outputs(pattern: str) -> FileList:
 def submit_build(build_request: Build) -> None:
     Builder.submit_build(build_request, WORKSPACE, axolotl_config)
 
+# TODO: Implementation needed
 @app.get("/build/status", status_code=200)
 def build_status() -> None:
     pass
 
-# @app.post("/submit_serve", status_code=202)
-@app.post("/start", status_code=202)
+@app.post("/submit_serve", status_code=202)
 def submit_serve(serve_request: Serve) -> None:
     Builder.submit_serve(serve_request, WORKSPACE)
 
+@app.post("/finetune", status_code=202)
+def start_finetune() -> None:
+    Builder.start_finetune(WORKSPACE, axolotl_config)
 
+# TODO: Implementation needed
+@app.post("/finetune/status", status_code=200)
+def finetune_status() -> None:
+    pass
 
 
 @app.get("/attestation")
