@@ -95,7 +95,7 @@ class Builder:
         workspace: Union[str, Path],
         image: str = BASE_IMAGE,
         gpus: Optional[str] = "",
-        env: Optional[str] = ""
+        env: Optional[list] = []
     ) -> str:
         """Private method: run command in a docker container, return stdout
 
@@ -133,7 +133,7 @@ class Builder:
                     str(cmd),
                     volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
                     working_dir="/mnt",
-
+                    environment=env
                 )
                 .decode("utf8")
                 .strip()
@@ -146,7 +146,7 @@ class Builder:
                 if gpus=="all":
                     count = -1
                 else:
-                    logger.error("ValueError: gpu option not All and not integer")
+                    logger.exception("ValueError: gpu option not All and not integer" + verr)
             except Exception as e: 
                 logger.exception(e)
             return (
@@ -157,7 +157,8 @@ class Builder:
                     working_dir="/mnt",
                     device_requests=[
                         docker.types.DeviceRequest(count=count, capabilities=[['gpu']])
-                    ]
+                    ],
+                    environment=env
                 )
             )
         
@@ -354,11 +355,17 @@ class Builder:
                     #['CUDA_VISIBLE_DEVICES=""', "python", "-m", "axolotl.cli.preprocess", axolotl_config.filename], # Axolotl preprocessing
                     ["accelerate", "launch", "-m", "axolotl.cli.train", axolotl_config.filename],
                 )
+
+                # These environment variables should make HuggingFace run only locally. 
+                # The huggingface hub location should also be changed to workspace where models and datasets are available
+                # The other environment variable that changes the cache is TRANSFORMERS_CACHE
+                env_offline = ["HF_DATASETS_OFFLINE=1", "TRANSFORMERS_OFFLINE=1"] #, f"HUGGINGFACE_HUB_CACHE={workspace}"]
                 cls.__docker_run(
                     image=axolotl_image,
                     cmd=cmd_accelerate,
                     workspace=workspace,
-                    gpus='"all"'
+                    gpus="all",
+                    env=env_offline
                 )
 
 

@@ -50,10 +50,11 @@ resume_from_checkpoint:
 local_rank:
 logging_steps: 1
 xformers_attention:
-flash_attention: true
+flash_attention: false
 s2_attention:
 
 warmup_steps: 10
+eval_sample_packing: false
 evals_per_epoch: 4
 saves_per_epoch: 1
 debug:

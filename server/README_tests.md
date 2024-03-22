@@ -51,7 +51,7 @@ build_request = Build(
 ).model_dump_json()
 resp_build = requests.post(url=url_build, data=build_request, headers={"Content-Type": "application/json"})
 
-url_finetune = "http://127.0.0.1/fineture"
+url_finetune = "http://127.0.0.1:8000/finetune"
 resp_finetune = requests.post(url=url_finetune)
 
 ```
