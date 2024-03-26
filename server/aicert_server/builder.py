@@ -95,7 +95,9 @@ class Builder:
         workspace: Union[str, Path],
         image: str = BASE_IMAGE,
         gpus: Optional[str] = "",
-        env: Optional[list] = []
+        env: Optional[list] = [],
+        network_disabled: bool = False, 
+        network_mode: str = 'host'
     ) -> str:
         """Private method: run command in a docker container, return stdout
 
@@ -158,7 +160,9 @@ class Builder:
                     device_requests=[
                         docker.types.DeviceRequest(count=count, capabilities=[['gpu']])
                     ],
-                    environment=env
+                    environment=env,
+                    network_disabled=network_disabled,
+                    network_mode=network_mode
                 )
             )
         
@@ -365,7 +369,9 @@ class Builder:
                     cmd=cmd_accelerate,
                     workspace=workspace,
                     gpus="all",
-                    env=env_offline
+                    env=env_offline,
+                    network_disabled=True,
+                    network_mode='none'
                 )
 
 

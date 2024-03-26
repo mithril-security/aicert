@@ -116,7 +116,7 @@ class EventLog:
     def attest(self, ca_cert) -> Dict[str, Any]:
         """Return the full event log, the TPM quote and the certificate chain in the same dict
 
-        The TPM quote contains all the PCR values (includong the one backing the event log).
+        The TPM quote contains all the PCR values (including the one backing the event log).
         It is signed by the TPM key which can be verified through the cloud-provider certificate chain.
 
         In simulation mode, only the event log is return along with a special simulation_mode key.
