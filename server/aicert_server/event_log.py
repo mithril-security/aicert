@@ -94,6 +94,27 @@ class EventLog:
             }
         )
 
+    def configuration_event(self, configuration_file, configuration_file_hash) -> None: 
+        """Add a configuration event to the event log
+        
+        This event is used to register the configuration file and its content. 
+        We take into account the measurement of the configuration file so that it will serve
+        as proof that axolotl was ran with the configuration file stated. 
+
+        Args:
+            configuration_file : Content of the configuration_file
+            configuration_file_hash : Checksum of the configuration file content.
+        """
+        self.__append(
+            {
+                "event_type": "axolotl_configuration", 
+                "content": {
+                    "spec":  {"config_file": configuration_file},
+                    "resolved": {"hash": configuration_file_hash},
+                }
+            }
+        )
+
     def outputs_event(self, outputs: List[Tuple[str, str]]) -> None:
         """Add an outputs event to the event log
         
