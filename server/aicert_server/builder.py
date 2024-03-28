@@ -86,8 +86,19 @@ class Builder:
             build_request (Build): build request to measure
         """
         cls.__event_log.build_request_event(build_request)
+    
+    @classmethod
+    def __register_axolotl_config(cls, axolotl_config: AxolotlConfig) -> None:
+        """Private method: add an axolotl configuration to the event log
+        
+        Args: 
+            axolotl_config (AxolotlConfig): Axolotl configuration to measure
+        """
+        with open(axolotl_config.filename, 'rb') as config:
+            configuration_content = config.read()
+        cls.__event_log.configuration_event(configuration_file=configuration_content, configuration_file_hash=sha256_file(axolotl_config.filename))
 
-    # TODO: adding gpu handling 
+
     @classmethod
     def __docker_run(
         cls,
@@ -302,11 +313,12 @@ class Builder:
         """
         try:
             with cls.__event_log_lock:
-                cls.__register_build_request(build_request)
 
                 if build_request.framework.framework == "axolotl":
                     cls.__finetune_framework = "axolotl"
                     build_request.inputs = axolotl_config.resources
+                    cls.__
+                cls.__register_build_request(build_request)
 
                 # install inputs
                 for input in build_request.inputs:

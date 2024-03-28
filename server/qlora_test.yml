@@ -1,4 +1,4 @@
-base_model: codellama/CodeLlama-7b-hf@sha256:7f22f0a5f7991355a2c3867923359ec4ed0b58bf
+base_model: codellama/CodeLlama-7b-hf@sha1:7f22f0a5f7991355a2c3867923359ec4ed0b58bf
 model_type: LlamaForCausalLM
 tokenizer_type: CodeLlamaTokenizer
 
@@ -7,7 +7,7 @@ load_in_4bit: false
 strict: false
 
 datasets:
-  - path: mhenrichsen/alpaca_2k_test@sha256:d05c1cb585e462b16532a44314aa4859cb7450c6
+  - path: mhenrichsen/alpaca_2k_test@sha1:d05c1cb585e462b16532a44314aa4859cb7450c6
     type: alpaca
 dataset_prepared_path:
 val_set_size: 0.05
