@@ -127,7 +127,7 @@ async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
     axolotl_config.initialize(config_str)
     axolotl_config.parse()
     axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
-    axolotl_config.set_filename("user_axolotl_config.yaml")
+    axolotl_config.set_filename(WORKSPACE / "user_axolotl_config.yaml")
     serialized_config = yaml.dump(axolotl_config.config)
     print(serialized_config)
     with open(axolotl_config_location, 'wb') as config:

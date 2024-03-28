@@ -317,7 +317,7 @@ class Builder:
                 if build_request.framework.framework == "axolotl":
                     cls.__finetune_framework = "axolotl"
                     build_request.inputs = axolotl_config.resources
-                    cls.__
+                    cls.__register_axolotl_config(axolotl_config=axolotl_config)
                 cls.__register_build_request(build_request)
 
                 # install inputs
