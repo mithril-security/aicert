@@ -30,10 +30,10 @@ model_resource = [{
          "repo":"https://huggingface.co/codellama/CodeLlama-7b-hf",
          "hash": "7f22f0a5f7991355a2c3867923359ec4ed0b58bf",
          "path": "workspace"
-    }]
+}]
 
 ## Sending a configuration 
-file = {'file': open('qlora_test.yml', 'rb')}
+file = {'file': open('tinyllama_test.yaml', 'r')}
 url = 'http://127.0.0.1:8000/axolotl/configuration'
 resp = requests.post(url=url, files=file)
 

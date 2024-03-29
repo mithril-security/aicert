@@ -6,6 +6,7 @@ from pathlib import Path
 from threading import Lock, Thread
 from typing import Union, Dict, Any, Optional
 import logging
+import yaml
 
 from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
@@ -95,7 +96,7 @@ class Builder:
             axolotl_config (AxolotlConfig): Axolotl configuration to measure
         """
         with open(axolotl_config.filename, 'rb') as config:
-            configuration_content = config.read()
+            configuration_content = yaml.safe_load(config)
         cls.__event_log.configuration_event(configuration_file=configuration_content, configuration_file_hash=sha256_file(axolotl_config.filename))
 
 
