@@ -16,8 +16,6 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import TypeAdapter
-from typing import List
 from pathlib import Path
 import uvicorn
 import hashlib
