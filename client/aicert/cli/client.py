@@ -96,6 +96,11 @@ class Client:
     def daemon_address(self) -> str:
         """Address of the configured deamon if available"""
         return self.__cfg.runner.daemon if self.__cfg.runner is not None else ""
+    
+    @property
+    def is_simulation(self) -> bool:
+        """Returns mode of operation (simulation or not)"""
+        return self.__simulation_mode
         
 
     @property

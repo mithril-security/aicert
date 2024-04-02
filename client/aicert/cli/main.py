@@ -78,11 +78,13 @@ def build(
 
         log.info("Sumitting build request")
         client.submit_build()
-        attestation = client.wait_for_attestation()
-        log.info(f"Received attestation")
 
-        with (dir / "attestation.json").open("wb") as f:
-            f.write(attestation)
+        if not client.is_simulation:
+            attestation = client.wait_for_attestation()
+            log.info(f"Received attestation")
+
+            with (dir / "attestation.json").open("wb") as f:
+                f.write(attestation)
 
         log.info(f"Downloading build outputs")
         client.download_outputs(dir, verbose=True)

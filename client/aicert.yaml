@@ -10,8 +10,12 @@ build:
       path: src
       dependencies: none
   outputs: helloworld
-  framework: default
+  framework: {"framework":"default"}
 runner:
   daemon: "http://127.0.0.1:8082"
   platform: "azure-tpm"
   instance_type: "Standard_DS1_v2"
+serve:
+  cmdline: "echo 'lala'"
+  host_port: 8080
+  container_port: 8085
