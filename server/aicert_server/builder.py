@@ -89,13 +89,13 @@ class Builder:
         cls.__event_log.build_request_event(build_request)
     
     @classmethod
-    def __register_axolotl_config(cls, axolotl_config: AxolotlConfig) -> None:
+    def __register_axolotl_config(cls, workspace: Path, axolotl_config: AxolotlConfig) -> None:
         """Private method: add an axolotl configuration to the event log
         
         Args: 
             axolotl_config (AxolotlConfig): Axolotl configuration to measure
         """
-        with open(axolotl_config.filename, 'rb') as config:
+        with open(workspace / axolotl_config.filename, 'rb') as config:
             configuration_content = yaml.safe_load(config)
         cls.__event_log.configuration_event(configuration_file=configuration_content, configuration_file_hash=sha256_file(axolotl_config.filename))
 
@@ -318,7 +318,7 @@ class Builder:
                 if build_request.framework.framework == "axolotl":
                     cls.__finetune_framework = "axolotl"
                     build_request.inputs = axolotl_config.resources
-                    cls.__register_axolotl_config(axolotl_config=axolotl_config)
+                    cls.__register_axolotl_config(workspace=workspace, axolotl_config=axolotl_config)
                 cls.__register_build_request(build_request)
 
                 # install inputs
