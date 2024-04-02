@@ -6,6 +6,7 @@ from pathlib import Path
 from threading import Lock, Thread
 from typing import Union, Dict, Any, Optional
 import logging
+import yaml
 
 from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
@@ -68,6 +69,11 @@ class Builder:
     __exception: Optional[HTTPException] = None
     __resolved_images: Dict[str, Any] = {}
 
+    __fineture_thread_lock = Lock()
+    __fineture_thread_in_use = False
+    __finetune_thread: Optional[Thread] = None 
+    __finetune_framework : str = "axolotl"
+
     __serve_thread_lock = Lock()
     __serve_ready = False
     __serve_image: Optional[str] = None
@@ -81,6 +87,18 @@ class Builder:
             build_request (Build): build request to measure
         """
         cls.__event_log.build_request_event(build_request)
+    
+    @classmethod
+    def __register_axolotl_config(cls, axolotl_config: AxolotlConfig) -> None:
+        """Private method: add an axolotl configuration to the event log
+        
+        Args: 
+            axolotl_config (AxolotlConfig): Axolotl configuration to measure
+        """
+        with open(axolotl_config.filename, 'rb') as config:
+            configuration_content = yaml.safe_load(config)
+        cls.__event_log.configuration_event(configuration_file=configuration_content, configuration_file_hash=sha256_file(axolotl_config.filename))
+
 
     @classmethod
     def __docker_run(
@@ -88,6 +106,10 @@ class Builder:
         cmd: Union[str, CmdLine],
         workspace: Union[str, Path],
         image: str = BASE_IMAGE,
+        gpus: Optional[str] = "",
+        env: Optional[list] = [],
+        network_disabled: bool = False, 
+        network_mode: str = 'host'
     ) -> str:
         """Private method: run command in a docker container, return stdout
 
@@ -110,8 +132,6 @@ class Builder:
                 if image.startswith("@local/") else
                 docker_client.images.pull(image)
             )
-            print(docker_client.images.list())
-            print(docker_client.images.get("aicertbase"))
             print(workspace.absolute())
             print(cmd)
             #logger.info(docker_client.images.get(image))
@@ -119,16 +139,46 @@ class Builder:
             cls.__resolved_images[image] = resolved_image
         else:
             resolved_image = cls.__resolved_images[image]
-        return (
-            docker_client.containers.run(
-                resolved_image,
-                str(cmd),
-                volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
-                working_dir="/mnt",
+
+        if gpus == "":
+            return (
+                docker_client.containers.run(
+                    resolved_image,
+                    str(cmd),
+                    volumes={str(workspace.absolute()): {"bind": "/mnt", "mode": "rw"}},
+                    working_dir="/mnt",
+                    environment=env
+                )
+                .decode("utf8")
+                .strip()
             )
-            .decode("utf8")
-            .strip()
-        )
+        else:
+            count = 0
+            try: 
+                count = int(gpus)
+            except ValueError as verr:
+                if gpus=="all":
+                    count = -1
+                else:
+                    logger.exception("ValueError: gpu option not All and not integer" + verr)
+            except Exception as e: 
+                logger.exception(e)
+            return (
+                docker_client.containers.run(
+                    resolved_image,
+                    str(cmd),
+                    volumes={str(workspace.absolute()) : {"bind": "/mnt", "mode":"rw"}},
+                    working_dir="/mnt",
+                    device_requests=[
+                        docker.types.DeviceRequest(count=count, capabilities=[['gpu']])
+                    ],
+                    environment=env,
+                    network_disabled=network_disabled,
+                    network_mode=network_mode
+                )
+            )
+        
+
 
     @classmethod
     def __fetch_resource(cls, spec: Resource, workspace: Path) -> None:
@@ -264,17 +314,17 @@ class Builder:
         """
         try:
             with cls.__event_log_lock:
-                cls.__register_build_request(build_request)
 
                 if build_request.framework.framework == "axolotl":
+                    cls.__finetune_framework = "axolotl"
                     build_request.inputs = axolotl_config.resources
+                    cls.__register_axolotl_config(axolotl_config=axolotl_config)
+                cls.__register_build_request(build_request)
 
                 # install inputs
                 for input in build_request.inputs:
-                    logger.info("input processed is ")
                     logger.info(input)
                     cls.__fetch_resource(input, workspace)
-                    logger.info("is input processed ? or is it just private?")
                 cls.__docker_run(
                     image=build_request.image,
                     cmd=build_request.cmdline,
@@ -309,6 +359,66 @@ class Builder:
             working_dir="/mnt",
             ports={f'{serve_request.container_port}/tcp': serve_request.host_port}
         )
+
+    @classmethod
+    def __axolotl_run(cls, 
+        axolotl_config: AxolotlConfig,
+        axolotl_image: str,
+        workspace: Path
+        ) -> None:
+        try: 
+            with cls.__event_log_lock:
+                cmd_accelerate = CmdLine(
+                    #['CUDA_VISIBLE_DEVICES=""', "python", "-m", "axolotl.cli.preprocess", axolotl_config.filename], # Axolotl preprocessing
+                    ["accelerate", "launch", "-m", "axolotl.cli.train", axolotl_config.filename],
+                )
+
+                # These environment variables should make HuggingFace run only locally. 
+                # The huggingface hub location should also be changed to workspace where models and datasets are available
+                # The other environment variable that changes the cache is TRANSFORMERS_CACHE
+                env_offline = ["HF_DATASETS_OFFLINE=1", "TRANSFORMERS_OFFLINE=1"] #, f"HUGGINGFACE_HUB_CACHE={workspace}"]
+                cls.__docker_run(
+                    image=axolotl_image,
+                    cmd=cmd_accelerate,
+                    workspace=workspace,
+                    gpus="all",
+                    env=env_offline,
+                    network_disabled=True,
+                    network_mode='none'
+                )
+
+
+        except HTTPException as e:
+            cls.__exception = e
+        except Exception as e:
+            print(f"error : {e}")
+            cls.__exception = HTTPException(status_code=500, detail=str(e))
+
+    @classmethod
+    def __finetune_fn(cls,
+            workspace: Path, 
+            axolotl_config: AxolotlConfig, 
+            finetune_image: str = AXOLOTL_IMAGE, 
+            finetune_image_hash: str = AXOLOTL_IMAGE_HASH
+        ) -> None:
+        """Private method: starts the finetuning with a framework (axolotl in this example) and the data fetched previously 
+
+        Args: 
+            workspace (Path): directory to mount at /mnt on the container and 
+                that contains the result of the finetuning 
+        """
+
+        # Pulling the axolotl docker and measuring 
+        finetune_image_hashed = finetune_image.split(":")[0]
+        finetune_image_hashed = finetune_image_hashed + "@" + finetune_image_hash
+        logger.info(finetune_image_hashed)
+        docker_client.images.pull(finetune_image_hashed)
+        logger.info(str(docker_client.images.list()))
+        if cls.__finetune_framework == "axolotl":
+            cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image_hashed, workspace=workspace)
+        
+
+        
     
     @classmethod
     def get_attestation(cls, ca_cert = "") -> Dict[str, Any]:
@@ -330,6 +440,7 @@ class Builder:
             workspace (Path): directory where inputs are downloaded and that will
                 be mounted on the build container at /mnt
         """
+
         logger.info(build_request)
         with cls.__thread_lock:
             if cls.__used:
@@ -359,6 +470,20 @@ class Builder:
             cls.__serve_thread = Thread(target=lambda: cls.__serve_fn(serve_request, workspace))
             cls.__serve_thread.start()
 
+    @classmethod
+    def start_finetune(cls, workspace: Path, axolotl_config: AxolotlConfig) -> None:
+        """
+        
+        """
+        with cls.__fineture_thread_lock:
+            if cls.__fineture_thread_in_use:
+                raise HTTPException(
+                    status_code=409, detail=f"Finetuning thread in use"
+                )
+            cls.__fineture_thread_in_use = True
+            cls.__finetune_thread = Thread(target=lambda: cls.__finetune_fn(workspace, axolotl_config))
+            cls.__finetune_thread.start()
+    
     @classmethod
     def poll_build(cls) -> bool:
         """Check build status

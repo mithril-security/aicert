@@ -92,5 +92,8 @@ class AxolotlConfig:
         ResourceListAdapter = TypeAdapter(List[Resource])
         cls.resources = ResourceListAdapter.validate_python(cls.resources)
 
-        cls.config['base_model'] = cls.__modelname
-        cls.config['datasets'][0]['path'] = cls.__datasetname
+        cls.config['base_model'] = 'model/' + cls.__modelname
+        cls.config['datasets'][0]['path'] = 'dataset/' + cls.__datasetname
+
+    def set_filename(cls, filename: str) -> None:
+        cls.filename = filename

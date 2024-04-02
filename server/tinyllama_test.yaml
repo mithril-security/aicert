@@ -1,6 +1,6 @@
-base_model: codellama/CodeLlama-7b-hf@sha1:7f22f0a5f7991355a2c3867923359ec4ed0b58bf
+base_model: TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T@sha1:036fa4651240b9a1487f709833b9e4b96b4c1574
 model_type: LlamaForCausalLM
-tokenizer_type: CodeLlamaTokenizer
+tokenizer_type: LlamaTokenizer
 
 load_in_8bit: true
 load_in_4bit: false
@@ -15,6 +15,7 @@ output_dir: ./lora-out
 
 sequence_len: 4096
 sample_packing: true
+eval_sample_packing: false
 pad_to_sequence_len: true
 
 adapter: lora
@@ -51,7 +52,6 @@ local_rank:
 logging_steps: 1
 xformers_attention:
 flash_attention: false
-s2_attention:
 
 warmup_steps: 10
 eval_sample_packing: false
@@ -63,6 +63,3 @@ weight_decay: 0.0
 fsdp:
 fsdp_config:
 special_tokens:
-  bos_token: "<s>"
-  eos_token: "</s>"
-  unk_token: "<unk>"

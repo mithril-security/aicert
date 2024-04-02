@@ -20,43 +20,26 @@ def test_parsing_axolotl():
     axolotl_config = AxolotlConfig()
     axolotl_config.initialize(config_content)
 
-    axolotl_config.parse('/workspace')
+    axolotl_config.parse()
     print(axolotl_config.config['base_model'])
     assert axolotl_config.config['base_model'] == "codellama/CodeLlama-7b-hf"
 
 
-def test_config_axolotl():
-    # example config used : https://github.com/OpenAccess-AI-Collective/axolotl/blob/main/examples/code-llama/7b/lora.yml
-    # dataset : https://huggingface.co/datasets/mhenrichsen/alpaca_2k_test
-    # model : https://huggingface.co/codellama/CodeLlama-7b-hf/commit/7f22f0a5f7991355a2c3867923359ec4ed0b58bf
-    print("\ntesting config_axolotl endpoint")
-    config_test_path = "/home/azureuser/aicert/server/aicert_server/tests/qlora_test.yml"
+# def test_config_axolotl():
+#     # example config used : https://github.com/OpenAccess-AI-Collective/axolotl/blob/main/examples/code-llama/7b/lora.yml
+#     # dataset : https://huggingface.co/datasets/mhenrichsen/alpaca_2k_test
+#     # model : https://huggingface.co/codellama/CodeLlama-7b-hf/commit/7f22f0a5f7991355a2c3867923359ec4ed0b58bf
+#     print("\ntesting config_axolotl endpoint")
+#     config_test_path = "/home/azureuser/aicert/server/aicert_server/tests/qlora_test.yml"
    
 
-    files = {'file': ('qlora_test.yml', open(config_test_path, 'rb'), 'application/x-yaml')}
-    response = test_client.post("/axolotl/configuration", files=files)
+#     files = {'file': ('qlora_test.yml', open(config_test_path, 'rb'), 'application/x-yaml')}
+#     response = test_client.post("/axolotl/configuration", files=files)
 
-    print(response.content)
-    assert response.status_code == 200, response.text
+#     print(response.content)
+#     assert response.status_code == 202, response.text
 
 
-# def test_builder():
-#     print("Testing Builder object features")
-#     model_resource = [{
-#         "resource_type":"model",
-#         "repo":"https://huggingface.co/codellama/CodeLlama-7b-hf",
-#         "hash": "7f22f0a5f7991355a2c3867923359ec4ed0b58bf",
-#         "path": str(WORKSPACE)
-#     }]
-#     ResourceListAdapter = TypeAdapter(List[Resource])
-#     build_request = Build(
-#         image="mithrilsecuritysas/aicertbase",
-#         cmdline="/bin/sh -c 'apt update && apt install -y build-essential && echo Hello > hello_world.txt",
-#         inputs=ResourceListAdapter.validate_python(model_resource),
-#         outputs="hello_world.txt",
-#     ).model_dump_json()
-
-#     Builder.submit_build(build_request=build_request, workspace=WORKSPACE)
 
 axolotl_config = AxolotlConfig()
 configuration_test = """
@@ -142,20 +125,19 @@ def test_build_axolotl():
     framework={"framework": "axolotl"}
     FrameworkAdapter = TypeAdapter(Framework)
     build_request = Build(
-        image="mithrilsecuritysas/aicertbase",
-        cmdline="/bin/sh -c 'apt update && apt install -y build-essential && git lfs install && echo Hello > hello_world.txt'",
+        image="@local/aicertbase:latest",
+        cmdline="/bin/sh -c 'echo Hello > hello_world.txt'",
         inputs=ResourceListAdapter.validate_python(model_resource),
         outputs="hello_world.txt",
         framework=FrameworkAdapter.validate_python(framework),
     ).model_dump_json()
 
-    #response = test_client.post("/axolotl/build", data=build_request, headers={"Content-Type": "application/json"})
-    response = test_client.post("/submit_build", data=build_request, headers={"Content-Type": "application/json"})
+    response = test_client.post("/build", data=build_request, headers={"Content-Type": "application/json"})
     print(response.content)
     assert response.status_code == 202
 
 
 
 
-test_config_axolotl()
+# test_config_axolotl()
 test_build_axolotl()

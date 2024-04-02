@@ -94,6 +94,27 @@ class EventLog:
             }
         )
 
+    def configuration_event(self, configuration_file, configuration_file_hash) -> None: 
+        """Add a configuration event to the event log
+        
+        This event is used to register the configuration file and its content. 
+        We take into account the measurement of the configuration file so that it will serve
+        as proof that axolotl was ran with the configuration file stated. 
+
+        Args:
+            configuration_file : Content of the configuration_file
+            configuration_file_hash : Checksum of the configuration file content.
+        """
+        self.__append(
+            {
+                "event_type": "axolotl_configuration", 
+                "content": {
+                    "spec":  {"config_file": configuration_file},
+                    "resolved": {"hash": configuration_file_hash},
+                }
+            }
+        )
+
     def outputs_event(self, outputs: List[Tuple[str, str]]) -> None:
         """Add an outputs event to the event log
         
@@ -116,7 +137,7 @@ class EventLog:
     def attest(self, ca_cert) -> Dict[str, Any]:
         """Return the full event log, the TPM quote and the certificate chain in the same dict
 
-        The TPM quote contains all the PCR values (includong the one backing the event log).
+        The TPM quote contains all the PCR values (including the one backing the event log).
         It is signed by the TPM key which can be verified through the cloud-provider certificate chain.
 
         In simulation mode, only the event log is return along with a special simulation_mode key.
