@@ -7,6 +7,7 @@ import OpenSSL
 from OpenSSL import crypto
 import requests
 import yaml
+import pkgutil
 from aicert_common.logging import log
 
 
@@ -46,13 +47,12 @@ def verify_ak_cert(cert_chain: list[bytes]) -> bytes:
     store = crypto.X509Store()
 
     # Create the CA cert object from PEM string, and store into X509Store
-    req = requests.get("http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt")
-    req.raise_for_status()
-    _rootca_cert = crypto.load_certificate(crypto.FILETYPE_ASN1, req.content)  # type: ignore
+    root_cert = pkgutil.get_data(__name__,"Azure Virtual TPM Root Certificate Authority 2023.crt")
+    _rootca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, root_cert)  # type: ignore
     store.add_cert(_rootca_cert)
 
     chain = [
-        crypto.load_certificate(crypto.FILETYPE_ASN1, _cert_der)
+        crypto.load_certificate(crypto.FILETYPE_PEM, _cert_der)
         for _cert_der in cert_chain[1:-1]
     ]
 

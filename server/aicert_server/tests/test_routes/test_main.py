@@ -122,14 +122,15 @@ def test_build_axolotl():
         "path": './'
     }]
     ResourceListAdapter = TypeAdapter(List[Resource])
-    framework={"framework": "axolotl"}
-    FrameworkAdapter = TypeAdapter(Framework)
+    framework="axolotl"
+    #FrameworkAdapter = TypeAdapter(Framework)
     build_request = Build(
         image="@local/aicertbase:latest",
         cmdline="/bin/sh -c 'echo Hello > hello_world.txt'",
         inputs=ResourceListAdapter.validate_python(model_resource),
         outputs="hello_world.txt",
-        framework=FrameworkAdapter.validate_python(framework),
+        framework=framework
+        #FrameworkAdapter.validate_python(framework),
     ).model_dump_json()
 
     response = test_client.post("/build", data=build_request, headers={"Content-Type": "application/json"})

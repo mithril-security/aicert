@@ -1,0 +1,15 @@
+version: 0.1.0
+build:
+  image: "@local/aicertbase:latest"
+  cmdline: |
+    /bin/sh -c 'echo Hello > hello_world.txt'
+  inputs:
+    - resource_type: model
+      repo: "https://huggingface.co/codellama/CodeLlama-7b-hf"
+      hash: 7f22f0a5f7991355a2c3867923359ec4ed0b58bf
+      path: ./
+      dependencies: none
+  outputs: hello_world.txt
+  framework: "axolotl"
+runner:
+serve:

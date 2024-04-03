@@ -30,14 +30,13 @@ class AxolotlConfig:
     def __verify_config_file(cls, yaml_config: str) -> bool:
         """Verifies yaml configuration and inserts into file
 
-        
         """
         try:
             cls.config = yaml.safe_load(yaml_config)
-            return True
+            cls.valid = True
         except:
             print(f"Error")
-            return False
+            cls.valid = False
         
     @classmethod 
     def __extract_model(cls) -> None: 

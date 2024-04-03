@@ -68,16 +68,6 @@ class AxolotlResource(BaseModel):
 Resource = Annotated[Union[FileResource, GitResource, AxolotlResource], Field(discriminator="resource_type")]
 
 
-class Framework(BaseModel):
-    """
-    Defines framework to use for build request
-    
-    Attributes:
-        framework (Literal["default", "axolotl"])
-    """
-    framework: Literal["default", "axolotl"]
-
-
 class Build(BaseModel):
     """Build section
 
@@ -107,7 +97,7 @@ class Build(BaseModel):
     cmdline: str
     inputs: Optional[List[Resource]]
     outputs: str
-    framework: Framework
+    framework: Literal["default", "axolotl"]
 
 
 class Runner(BaseModel):
@@ -180,3 +170,9 @@ class FileList(BaseModel):
     """
     pattern: str
     file_list: List[str]
+
+
+class AxolotlConfigString(BaseModel):
+    """A string representation of an axolotl configuration
+    """
+    axolotl_config: str

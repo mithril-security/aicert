@@ -202,11 +202,11 @@ class Builder:
         path = Path(spec.path)
         if path.is_absolute():
             raise HTTPException(
-                status_code=403, detail=f"Ressource path must be relative: {path}"
+                status_code=403, detail=f"Resource path must be relative: {path}"
             )
 
         resource_hash = ""
-        logger.info("ressource type is : ")
+        logger.info("resource type is : ")
         logger.info(spec.resource_type)
 
         if spec.resource_type == "git":
@@ -315,7 +315,7 @@ class Builder:
         try:
             with cls.__event_log_lock:
 
-                if build_request.framework.framework == "axolotl":
+                if build_request.framework == "axolotl":
                     cls.__finetune_framework = "axolotl"
                     build_request.inputs = axolotl_config.resources
                     cls.__register_axolotl_config(axolotl_config=axolotl_config)
@@ -416,9 +416,8 @@ class Builder:
         logger.info(str(docker_client.images.list()))
         if cls.__finetune_framework == "axolotl":
             cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image_hashed, workspace=workspace)
-        
+        #cls.__register_finetune(axolotl_config, finetune_image_hashed)
 
-        
     
     @classmethod
     def get_attestation(cls, ca_cert = "") -> Dict[str, Any]:
@@ -447,6 +446,14 @@ class Builder:
                 raise HTTPException(
                     status_code=409, detail=f"Cannot build more than once"
                 )
+            
+            #Prevent server from not accepting build requests if an invalid build request was received earlier
+            if build_request.framework == "axolotl":
+                if not axolotl_config.valid:
+                    raise HTTPException(
+                    status_code=409, detail=f"Axolotl configuration not found or invalid"
+                )
+
             cls.__used = True
             cls.__thread = Thread(target=lambda: cls.__build_fn(build_request, workspace, axolotl_config))
             cls.__thread.start()

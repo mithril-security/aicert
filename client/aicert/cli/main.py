@@ -27,7 +27,7 @@ See the aicert-common package for more on the configuration file.
 import os
 from pathlib import Path
 import typer
-from typing import Annotated
+from typing import Annotated, Optional
 
 from .client import Client
 from aicert_common.logging import log
@@ -54,6 +54,39 @@ def new(
 
 
 @app.command()
+def axolotl_config(
+    config: Optional[str] = None,
+    dir: Annotated[Path, typer.Option()] = Path.cwd(),
+    interactive: Annotated[bool, typer.Option()] = True,
+):
+    """Creates an axolotl configuration instance on the server"""
+    with log_errors_and_warnings():
+        client = Client.from_config_file(
+            dir=dir,
+            interactive=interactive,
+            simulation_mode=SIMULATION_MODE,
+        )
+        client.submit_axolotl_config(dir, config)
+
+
+@app.command()
+def finetune(
+    dir: Annotated[Path, typer.Option()] = Path.cwd(),
+    interactive: Annotated[bool, typer.Option()] = True,
+):
+    """Finetune a model using the previously transferred
+    axolotl configuration
+    """
+    with log_errors_and_warnings():
+        client = Client.from_config_file(
+            dir=dir,
+            interactive=interactive,
+            simulation_mode=SIMULATION_MODE,
+        )
+        client.submit_finetune()
+
+
+@app.command()
 def build(
     dir: Annotated[Path, typer.Option()] = Path.cwd(),
     interactive: Annotated[bool, typer.Option()] = True,
@@ -74,7 +107,7 @@ def build(
             simulation_mode=SIMULATION_MODE,
         )
         log.info(f"Connecting to runner at {client.daemon_address}")
-        client.connect()
+        #client.connect()
 
         log.info("Sumitting build request")
         client.submit_build()

@@ -134,7 +134,26 @@ class EventLog:
             }
         )
 
-    def attest(self, ca_cert) -> Dict[str, Any]:
+    #def finetune(self, axolotl_config_filename, axolotl_config_hash, finetuning_image, image_hash) -> None:
+    #    """Add a finetune event to the event log
+    #    """
+    #    self.__append(
+    #        {
+    #            "event_type": "finetuning",
+    #            "content": [
+    #                {
+    #                    "spec": {"axolotl_config": axolotl_config_filename},
+    #                    "resolved": {"hash": axolotl_config_hash}
+    #                },
+    #                {
+    #                    "spec": {"image": finetuning_image},
+    #                    "resolved": {"hash": image_hash}
+    #                }
+    #            ]
+    #        }
+    #    )
+
+    def attest(self, ca_cert="") -> Dict[str, Any]:
         """Return the full event log, the TPM quote and the certificate chain in the same dict
 
         The TPM quote contains all the PCR values (including the one backing the event log).

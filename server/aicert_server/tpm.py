@@ -65,19 +65,23 @@ def tpm_read_pcr(pcr_index: int) -> str:
 
 
 def cert_chain() -> List[bytes]:
-    def get_certificate_from_url(url: str):
-        req = requests.get(url)
-        req.raise_for_status()
-        return req.content
+    #def get_certificate_from_url(url: str):
+    #    req = requests.get(url)
+    #    req.raise_for_status()
+    #    return req.content
 
-    intermediate_cert = get_certificate_from_url(
-        # New one :
-        "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA02.AME.GBL_AME%20Infra%20CA%2006.crt"
-        # Old one : "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA01.AME.GBL_AME%20Infra%20CA%2002(4).crt"
-    )
-    root_cert = get_certificate_from_url(
-        "http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt"
-    )
+    #intermediate_cert = get_certificate_from_url(
+    #    # New one :
+    #    "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA02.AME.GBL_AME%20Infra%20CA%2006.crt"
+    #    # Old one : "http://crl.microsoft.com/pkiinfra/Certs/BL2PKIINTCA01.AME.GBL_AME%20Infra%20CA%2002(4).crt"
+    #)
+    #root_cert = get_certificate_from_url(
+    #    "http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt"
+    #)
+
+    root_cert = open("Azure_TPM_certs/Azure Virtual TPM Root Certificate Authority 2023.crt", "rb").read()
+    intermediate_cert = open("Azure_TPM_certs/intermediate_ca.crt", "rb").read()
+
     AIK_CERT_INDEX = "0x01C101D0"
     cert = tpm_nvread(AIK_CERT_INDEX)
     cert_chain = [cert, intermediate_cert, root_cert]

@@ -24,7 +24,7 @@ import hashlib
 import yaml
 import logging
 
-from aicert_common.protocol import Build, Serve, FileList, Resource
+from aicert_common.protocol import Build, Serve, FileList, Resource, AxolotlConfigString
 from .config_parser import AxolotlConfig
 from .builder import Builder, SIMULATION_MODE
 from .tpm import tpm_extend_pcr
@@ -119,21 +119,20 @@ def aTLS() -> Response:
 
 ### Axolotl endpoints
 @app.post("/axolotl/configuration")
-async def config_axolotl(file: UploadFile = File(...)) -> JSONResponse:
+def config_axolotl(axolotl_conf_string: AxolotlConfigString) -> JSONResponse:
     # initialize config
-    print("Setting up axolotl configuration.")
-    config_str = await file.read()
+    if axolotl_config.valid:
+        return JSONResponse(content={"Error":"Cannot upload more than one configuration to the server"}, status_code=406)
 
-    axolotl_config.initialize(config_str)
+    print("Setting up axolotl configuration.")
+    axolotl_config.initialize(axolotl_conf_string.axolotl_config)
     axolotl_config.parse()
     axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
     axolotl_config.set_filename(WORKSPACE / "user_axolotl_config.yaml")
-    serialized_config = yaml.dump(axolotl_config.config)
-    print(serialized_config)
     with open(axolotl_config_location, 'wb') as config:
-        config.write(serialized_config.encode("utf-8"))
+        config.write(axolotl_conf_string.axolotl_config.encode("utf-8"))
 
-    return JSONResponse(content={"yaml file status": "OK"})
+    return JSONResponse(content={"yaml file status": "OK"}, status_code=202)
 
 
 def main():

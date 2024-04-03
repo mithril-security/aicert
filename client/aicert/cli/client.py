@@ -12,7 +12,7 @@ import urllib.parse
 import yaml
 import warnings
 
-from aicert_common.protocol import ConfigFile, FileList, Runner, Build, Serve
+from aicert_common.protocol import ConfigFile, FileList, Runner, Build, Serve, AxolotlConfigString
 from aicert_common.logging import log
 from aicert_common.errors import AICertException
 from .requests_adapter import ForcedIPHTTPSAdapter
@@ -316,6 +316,29 @@ class Client:
             ),
             "Cannot submit build to server",
         )
+
+    def submit_axolotl_config(self, dir: Path, config_file = "axolotl_config.yaml"):
+        """Send an axolotl configuration to the server
+
+        Args:
+            config_file: Axolotl configuration.
+        """
+        with (dir / config_file).open("rb") as file:
+            try:
+                data = yaml.safe_load(file)
+                str_data=yaml.dump(data)
+                axolotl_conf_string = AxolotlConfigString(axolotl_config=str_data)
+            except yaml.YAMLError as e:
+                raise AICertConfigFileException(e)
+
+        raise_for_status(
+             self.__session.post(
+                 f"{self.__base_url}/axolotl/configuration",
+                data=axolotl_conf_string.json(),
+                headers={"Content-Type": "application/json"},
+             ),
+             "Failed sending axolotl configuration to server",
+         )    
     
     # def submit_config(self, yaml_config: str) -> None:
     #     """
@@ -332,6 +355,16 @@ class Client:
     #         )
     #     )
 
+    def submit_finetune(self) -> None:
+        """Send a request to begin finetuning a model
+        """
+        raise_for_status(
+             self.__session.post(
+                 f"{self.__base_url}/finetune",
+             ),
+             "Failed sending finetune request to server",
+         )    
+
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
         """Send a submit_serve request to the runner
 
@@ -343,7 +376,7 @@ class Client:
         if serve_cfg is not None:
             raise_for_status(
                 self.__session.post(
-                    f"{self.__base_url}/start",
+                    f"{self.__base_url}/submit_serve",
                     data=serve_cfg.json(),
                     headers={"Content-Type": "application/json"},
                 ),
