@@ -12,6 +12,7 @@ from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
 from .event_log import EventLog
 from .config_parser import AxolotlConfig
+from .log_streamer import LogStreamer
 
 
 docker_client = docker.from_env()
@@ -273,8 +274,10 @@ class Builder:
             )
             print(container_hash)
             
-            for log in container_hash.logs(stdout=True, stderr=False, stream=True):
-                logger.info(log)
+            # for log in container_hash.logs(stdout=True, stderr=False, stream=True):
+            #     logger.info(log)
+            log_streamer = LogStreamer("log_model_dataset.log")
+            log_streamer.write_stream(container_hash)
 
             resource_hash = cls.__docker_run(
                 cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
