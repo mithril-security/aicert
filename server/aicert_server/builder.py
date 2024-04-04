@@ -276,7 +276,7 @@ class Builder:
             
             # for log in container_hash.logs(stdout=True, stderr=False, stream=True):
             #     logger.info(log)
-            log_streamer = LogStreamer("log_model_dataset.log")
+            log_streamer = LogStreamer(workspace / "log_model_dataset.log")
             log_streamer.write_stream(container_hash)
 
             resource_hash = cls.__docker_run(
