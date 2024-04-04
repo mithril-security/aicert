@@ -12,6 +12,7 @@ from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
 from .event_log import EventLog
 from .config_parser import AxolotlConfig
+from .log_streamer import LogStreamer
 
 
 docker_client = docker.from_env()
@@ -267,21 +268,24 @@ class Builder:
                     ["git", "reset", "--hard", "FETCH_HEAD"]
                 ),
                 workspace=workspace,
-                # stdout=True,
-                # stderr=True,
-                detach=True, 
+                #stdout=True,
+                #stderr=True,
+                #detach=True, 
             )
+            print("CONTAINER HASH")
             print(container_hash)
             
-            for log in container_hash.logs(stdout=True, stderr=False, stream=True):
-                logger.info(log)
+            # for log in container_hash.logs(stdout=True, stderr=False, stream=True):
+            #     logger.info(log)
+            #log_streamer = LogStreamer(workspace / "log_model_dataset.log")
+            #log_streamer.write_stream(container_hash)
 
             resource_hash = cls.__docker_run(
                 cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
                 workspace=workspace / path,
                 # stdout=True,
                 # stderr=True,
-                detach=True, 
+                #detach=True, 
             )
             resource_hash = f"sha1:{resource_hash}"
 
@@ -359,14 +363,17 @@ class Builder:
                     logger.info(input)
                     cls.__fetch_resource(input, workspace)
                     logger.info(cls.__docker_output_stream)
+                print("inputs fetched")
                 cls.__docker_run(
                     image=build_request.image,
                     cmd=build_request.cmdline,
                     workspace=workspace,
                 )
+                print("docker run for build complete")
 
                 cls.__register_outputs(build_request.outputs, workspace)
-                
+                print("registering outputs complete")
+
             with cls.__serve_thread_lock:
                 cls.__serve_ready = True
                 cls.__serve_image = build_request.image
@@ -552,6 +559,7 @@ class Builder:
             if cls.__thread is not None and not cls.__thread.is_alive():
                 with cls.__event_log_lock:
                     if cls.__exception is not None:
+                        print("exception in poll build")
                         raise cls.__exception
                 return True
             else:

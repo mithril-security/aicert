@@ -14,13 +14,16 @@ Endpoints:
 import base64
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import Response, JSONResponse
+from fastapi.responses import Response, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
 import hashlib
 import yaml
 import logging
+from sh import tail
+import time
+from sse_starlette.sse import EventSourceResponse
 
 from aicert_common.protocol import Build, Serve, FileList, Resource, AxolotlConfigString
 from .config_parser import AxolotlConfig
@@ -61,10 +64,18 @@ def list_outputs(pattern: str) -> FileList:
 def submit_build(build_request: Build) -> None:
     Builder.submit_build(build_request, WORKSPACE, axolotl_config)
 
-# TODO: Implementation needed
+async def logGenerator():
+    for line in tail("-f", WORKSPACE / "log_model_dataset.log", _iter=True):
+        # if await request.is_disconnected():
+        #     print("client disconnected")
+        #     break
+        yield line
+        time.sleep(0.2)
+
 @app.get("/build/status", status_code=200)
-def build_status() -> None:
-    pass
+async def build_status():
+    log_generator = logGenerator()
+    return StreamingResponse(log_generator, media_type="text/event-stream")
 
 @app.post("/submit_serve", status_code=202)
 def submit_serve(serve_request: Serve) -> None:

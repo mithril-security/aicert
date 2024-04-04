@@ -78,10 +78,10 @@ def cert_chain() -> List[bytes]:
     #root_cert = get_certificate_from_url(
     #    "http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt"
     #)
-
+    print("reading certs")
     root_cert = open("Azure_TPM_certs/Azure Virtual TPM Root Certificate Authority 2023.crt", "rb").read()
     intermediate_cert = open("Azure_TPM_certs/intermediate_ca.crt", "rb").read()
-
+    print("finished reading certs")
     AIK_CERT_INDEX = "0x01C101D0"
     cert = tpm_nvread(AIK_CERT_INDEX)
     cert_chain = [cert, intermediate_cert, root_cert]
@@ -99,6 +99,7 @@ def quote() -> Dict[str, bytes]:
     Quote is signed using the AIK_PUB_INDEX key
 
     """
+    print("starting quote generation")
     AIK_PUB_INDEX = "0x81000003"
     with (
         tempfile.NamedTemporaryFile() as quote_msg_file,
@@ -118,5 +119,6 @@ def quote() -> Dict[str, bytes]:
         quote_msg = quote_msg_file.read()
         quote_sig = quote_sig_file.read()
         quote_pcr = quote_pcr_file.read()
+    print("finished quote generation")
 
     return {"message": quote_msg, "signature": quote_sig, "pcr": quote_pcr}

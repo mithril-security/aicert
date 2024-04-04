@@ -57,3 +57,14 @@ resp_finetune = requests.post(url=url_finetune)
 ```
 
 - [ ] Inputs must be removed as it is taken from the the configuration file. 
+
+```python
+# log stream events testing 
+import requests
+import sseclient
+url_status_log  = "http://127.0.0.1:8000/build/status"
+headers = {'Accept': 'text/event-stream'}
+resp_log = requests.get(url_status_log, stream=True, headers=headers)
+client = sseclient.SSEClient(resp_log)
+for event in client.events():
+    print(event)
