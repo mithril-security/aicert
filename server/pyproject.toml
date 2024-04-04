@@ -20,6 +20,7 @@ httpx = "^0.24.1"
 blackdoc = "^0.3.8"
 requests = "^2.31.0"
 cryptography = "^41.0.2"
+aicert-common = { path = "../common" }
 pydantic = "^2.6.3"
 sh = "^2.0.6"
 sse-starlette = "^2.0.0"

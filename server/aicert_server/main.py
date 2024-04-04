@@ -139,7 +139,7 @@ def config_axolotl(axolotl_conf_string: AxolotlConfigString) -> JSONResponse:
     axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
     axolotl_config.set_filename("user_axolotl_config.yaml")
     with open(axolotl_config_location, 'wb') as config:
-        config.write(axolotl_conf_string.axolotl_config.encode("utf-8"))
+        config.write(axolotl_config.config.encode("utf-8"))
 
     return JSONResponse(content={"yaml file status": "OK"}, status_code=202)
 

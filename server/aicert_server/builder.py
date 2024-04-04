@@ -270,22 +270,22 @@ class Builder:
                 workspace=workspace,
                 #stdout=True,
                 #stderr=True,
-                #detach=True, 
+                detach=True, 
             )
             print("CONTAINER HASH")
             print(container_hash)
             
             # for log in container_hash.logs(stdout=True, stderr=False, stream=True):
             #     logger.info(log)
-            #log_streamer = LogStreamer(workspace / "log_model_dataset.log")
-            #log_streamer.write_stream(container_hash)
+            log_streamer = LogStreamer(workspace / "log_model_dataset.log")
+            log_streamer.write_stream(container_hash)
 
             resource_hash = cls.__docker_run(
                 cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
                 workspace=workspace / path,
                 # stdout=True,
                 # stderr=True,
-                #detach=True, 
+                detach=True, 
             )
             resource_hash = f"sha1:{resource_hash}"
 
