@@ -33,7 +33,7 @@ model_resource = [{
 }]
 
 ## Sending a configuration 
-file = {'file': open('tinyllama_test.yaml', 'r')}
+file = {'file': open('tinyllama_test.yaml', 'rb')}
 url = 'http://127.0.0.1:8000/axolotl/configuration'
 resp = requests.post(url=url, files=file)
 

@@ -66,6 +66,8 @@ def axolotl_config(
             interactive=interactive,
             simulation_mode=SIMULATION_MODE,
         )
+        config = config if config is not None else "axolotl_config.yaml"
+
         client.submit_axolotl_config(dir, config)
 
 

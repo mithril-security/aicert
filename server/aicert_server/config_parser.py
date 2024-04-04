@@ -2,6 +2,7 @@ import yaml
 from aicert_common.protocol import Resource
 from typing import List
 from pydantic import TypeAdapter
+from fastapi import HTTPException
 
 
 class AxolotlConfig:
@@ -37,6 +38,9 @@ class AxolotlConfig:
         except:
             print(f"Error")
             cls.valid = False
+            raise HTTPException(
+                    status_code=400, detail=f"Axolotl configuration invalid"
+                )
         
     @classmethod 
     def __extract_model(cls) -> None: 

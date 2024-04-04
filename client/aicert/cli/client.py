@@ -393,7 +393,7 @@ class Client:
         while True:
             res = self.__session.get(f"{self.__base_url}/attestation")
             if res.status_code == 204:
-                sleep(1)
+                sleep(5)
                 continue
             raise_for_status(
                 res, "Cannot retrieve attestation, build likely failed"

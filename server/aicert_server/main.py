@@ -16,8 +16,6 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import TypeAdapter
-from typing import List
 from pathlib import Path
 import uvicorn
 import hashlib
@@ -128,7 +126,7 @@ def config_axolotl(axolotl_conf_string: AxolotlConfigString) -> JSONResponse:
     axolotl_config.initialize(axolotl_conf_string.axolotl_config)
     axolotl_config.parse()
     axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
-    axolotl_config.set_filename(WORKSPACE / "user_axolotl_config.yaml")
+    axolotl_config.set_filename("user_axolotl_config.yaml")
     with open(axolotl_config_location, 'wb') as config:
         config.write(axolotl_conf_string.axolotl_config.encode("utf-8"))
 
