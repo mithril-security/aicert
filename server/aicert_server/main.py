@@ -105,7 +105,7 @@ def finetune_status() -> None:
 
 @app.get("/attestation")
 def attestation() -> Response:
-    if not Builder.poll_build():
+    if not Builder.poll_finetune():
         return Response(status_code=204)
     # FastAPI encodes the response as json, but the quote contains raw bytes...
     # so we have to base64 encode them, this is ugly.

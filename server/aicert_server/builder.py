@@ -586,3 +586,20 @@ class Builder:
             else:
                 return False
     
+    @classmethod
+    def poll_finetune(cls) -> bool:
+        """Check build status
+        
+        Returns False while the finetune thread has not completed, True if it has
+        completed successfully and (re)raises an error if one occured in the thread.
+        """
+        with cls.__fineture_thread_lock:
+            if cls.__finetune_thread is not None and not cls.__finetune_thread.is_alive():
+                with cls.__event_log_lock:
+                    if cls.__exception is not None:
+                        print("exception in poll build")
+                        raise cls.__exception
+                return True
+            else:
+                return False
+    
