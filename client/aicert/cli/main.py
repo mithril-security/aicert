@@ -73,6 +73,7 @@ def axolotl_config(
 
 @app.command()
 def finetune(
+    config: Optional[str] = "aicert.yaml",
     dir: Annotated[Path, typer.Option()] = Path.cwd(),
     interactive: Annotated[bool, typer.Option()] = True,
 ):
@@ -85,7 +86,20 @@ def finetune(
             interactive=interactive,
             simulation_mode=SIMULATION_MODE,
         )
+        #log.info(f"Connecting to runner at {client.daemon_address}")
+        #client.connect()
+
+        client.submit_axolotl_config(dir, config)
         client.submit_finetune()
+
+        if not client.is_simulation:
+            attestation = client.wait_for_attestation()
+            log.info(f"Received attestation")
+
+            with (dir / "attestation.json").open("wb") as f:
+                f.write(attestation)
+
+        #client.disconnect()
 
 
 @app.command()
@@ -128,7 +142,8 @@ def build(
             client.submit_serve()
             log.info(f"Deployment running")
         else:
-            client.disconnect()
+            #client.disconnect()
+            pass
 
 
 @app.command()

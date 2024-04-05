@@ -206,7 +206,7 @@ class Client:
             interactive=interactive,
             simulation_mode=simulation_mode,
         )
-        client.__load_config(dir)
+        #client.__load_config(dir)
 
         return client
     

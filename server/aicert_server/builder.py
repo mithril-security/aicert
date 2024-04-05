@@ -155,9 +155,12 @@ class Builder:
             #logger.info(docker_client.images.get(image))
             cls.__event_log.input_image_event(image, resolved_image.id)
             cls.__resolved_images[image] = resolved_image
+            print("Resolved image")
         else:
             resolved_image = cls.__resolved_images[image]
+            print("image existed")
 
+        print(f"resolved image is : {resolved_image}")
         if gpus == "":
             return (
                 docker_client.containers.run(
@@ -408,29 +411,31 @@ class Builder:
         workspace: Path
         ) -> None:
         try: 
-            with cls.__event_log_lock:
-                cmd_accelerate = CmdLine(
-                    #['CUDA_VISIBLE_DEVICES=""', "python", "-m", "axolotl.cli.preprocess", axolotl_config.filename], # Axolotl preprocessing
-                    ["accelerate", "launch", "-m", "axolotl.cli.train", axolotl_config.filename],
-                )
+            print("IN AXOLOTL RUN")
+            #with cls.__event_log_lock:
+            cmd_accelerate = CmdLine(
+                #['CUDA_VISIBLE_DEVICES=""', "python", "-m", "axolotl.cli.preprocess", axolotl_config.filename], # Axolotl preprocessing
+                ["accelerate", "launch", "-m", "axolotl.cli.train", axolotl_config.filename],
+            )
 
-                # These environment variables should make HuggingFace run only locally. 
-                # The huggingface hub location should also be changed to workspace where models and datasets are available
-                # The other environment variable that changes the cache is TRANSFORMERS_CACHE
-                env_offline = ["HF_DATASETS_OFFLINE=1", "TRANSFORMERS_OFFLINE=1"] #, f"HUGGINGFACE_HUB_CACHE={workspace}"]
-                container_hash = cls.__docker_run(
-                    image=axolotl_image,
-                    cmd=cmd_accelerate,
-                    workspace=workspace,
-                    gpus="all",
-                    env=env_offline,
-                    network_disabled=True,
-                    network_mode='none',
-                    detach=True,
-                )
-                for log in container_hash.logs(stdout=True, stream=True, stderr=False):
-                    logger.info(log)
-                # cls.__docker_output_stream = container_hash.attach( logs=True)
+            # These environment variables should make HuggingFace run only locally. 
+            # The huggingface hub location should also be changed to workspace where models and datasets are available
+            # The other environment variable that changes the cache is TRANSFORMERS_CACHE
+            env_offline = ["HF_DATASETS_OFFLINE=1", "TRANSFORMERS_OFFLINE=1"] #, f"HUGGINGFACE_HUB_CACHE={workspace}"]
+            print(f"axolotl image: {axolotl_image}")
+            container_hash = cls.__docker_run(
+                image=axolotl_image,
+                cmd=cmd_accelerate,
+                workspace=workspace,
+                gpus="all",
+                env=env_offline,
+                network_disabled=True,
+                network_mode='none',
+                detach=True,
+            )
+            for log in container_hash.logs(stdout=True, stream=True, stderr=False):
+                logger.info(log)
+            # cls.__docker_output_stream = container_hash.attach( logs=True)
 
 
         except HTTPException as e:
@@ -452,17 +457,33 @@ class Builder:
             workspace (Path): directory to mount at /mnt on the container and 
                 that contains the result of the finetuning 
         """
+        try:
+            with cls.__event_log_lock:
+                cls.__finetune_framework = "axolotl"
+                cls.__register_axolotl_config(workspace=workspace, axolotl_config=axolotl_config)
 
-        # Pulling the axolotl docker and measuring 
-        finetune_image_hashed = finetune_image.split(":")[0]
-        finetune_image_hashed = finetune_image_hashed + "@" + finetune_image_hash
-        logger.info(finetune_image_hashed)
-        docker_client.images.pull(finetune_image_hashed)
-        logger.info(str(docker_client.images.list()))
-        if cls.__finetune_framework == "axolotl":
-            cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image_hashed, workspace=workspace)
-        #cls.__register_finetune(axolotl_config, finetune_image_hashed)
+                # install inputs
+                for input in axolotl_config.resources:
+                    logger.info(input)
+                    cls.__fetch_resource(input, workspace)
+                    logger.info(cls.__docker_output_stream)
 
+                # Pulling the axolotl docker and measuring 
+                finetune_image_hashed = finetune_image.split(":")[0]
+                finetune_image_hashed = finetune_image_hashed + "@" + finetune_image_hash
+                logger.info(finetune_image_hashed)
+                docker_client.images.pull(finetune_image_hashed)
+                logger.info(str(docker_client.images.list()))
+                if cls.__finetune_framework == "axolotl":
+                    cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image_hashed, workspace=workspace)
+                #cls.__register_finetune(axolotl_config, finetune_image_hashed)
+        
+        except HTTPException as e:
+            cls.__exception = e
+        except Exception as e:
+            print(f"ERROR: {e}")
+            cls.__exception = HTTPException(status_code=500, detail=str(e))
+    
 
     @classmethod
     def get_output_stream(cls) -> str: 
