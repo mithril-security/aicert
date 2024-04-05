@@ -7,6 +7,7 @@ from threading import Lock, Thread
 from typing import Union, Dict, Any, Optional
 import logging
 import yaml
+import zipfile
 
 from aicert_common.protocol import Resource, Build, Serve
 from .cmd_line import CmdLine
@@ -126,8 +127,6 @@ class Builder:
         network_mode: str = 'host',
         detach: bool = False,
         remove: bool = False, 
-        # stderr: bool = False, 
-        # stdout: bool = False, 
     ) -> Union[str, docker.models.containers.Container]:
         """Private method: run command in a docker container, return stdout
 
@@ -268,8 +267,6 @@ class Builder:
                     ["git", "reset", "--hard", "FETCH_HEAD"]
                 ),
                 workspace=workspace,
-                # stdout=True,
-                # stderr=True,
                 detach=True, 
             )
             print(container_hash)
@@ -282,9 +279,7 @@ class Builder:
             resource_hash = cls.__docker_run(
                 cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
                 workspace=workspace / path,
-                # stdout=True,
-                # stderr=True,
-                detach=True, 
+                detach=False, 
             )
             resource_hash = f"sha1:{resource_hash}"
 
@@ -424,10 +419,10 @@ class Builder:
                     network_mode='none',
                     detach=True,
                 )
-                for log in container_hash.logs(stdout=True, stream=True, stderr=False):
-                    logger.info(log)
-                # cls.__docker_output_stream = container_hash.attach( logs=True)
 
+                # Log streamer registers the stdout for the docker into the log file log_axolotl.log
+                log_streamer_finetune = LogStreamer(workspace / "log_axolotl.log")
+                log_streamer_finetune.write_stream(container_hash)
 
         except HTTPException as e:
             cls.__exception = e
@@ -457,6 +452,16 @@ class Builder:
         logger.info(str(docker_client.images.list()))
         if cls.__finetune_framework == "axolotl":
             cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image_hashed, workspace=workspace)
+        
+        # Registering output and compression 
+        with zipfile.ZipFile(workspace / 'finetuned-model.zip','w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(workspace / "lora-out"):
+                for file in files:
+                    zipf.write(os.path.join(root, file),
+                            os.path.relpath(os.path.join(root,file), os.path.join(workspace /"lora-out", '..'))
+                    )
+
+
         
     @classmethod
     def get_output_stream(cls) -> str: 

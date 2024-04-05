@@ -64,7 +64,12 @@ import requests
 import sseclient
 url_status_log  = "http://127.0.0.1:8000/build/status"
 headers = {'Accept': 'text/event-stream'}
-resp_log = requests.get(url_status_log, stream=True, headers=headers)
-client = sseclient.SSEClient(resp_log)
-for event in client.events():
-    print(event)
+# resp_log = requests.get(url_status_log, stream=True, headers=headers)
+# client = sseclient.SSEClient(resp_log)
+# for event in client.events():
+#     print(event)
+with requests.get(url_status_log, stream=True) as r:
+        for line in r.iter_content(16):
+                print("logs: {}".format(line))
+
+```
