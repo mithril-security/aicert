@@ -329,6 +329,17 @@ class Builder:
             )
         cls.__event_log.outputs_event(outputs)
 
+    # @classmethod
+    # def __register_axolotl_outputs(cls, output_folder: str, workspace: Path) -> None:
+    #     """Private: add hashes of the outputs trained model to the event log
+
+    #     Args:
+    #         output_folder (str)
+    #         workspace (Path)
+        
+    #     """
+
+
     @classmethod
     def __build_fn(cls, build_request: Build, workspace: Path, axolotl_config: AxolotlConfig = AxolotlConfig()) -> None:
         """Private method: implements the build process, run by the build thread
@@ -460,6 +471,8 @@ class Builder:
                     zipf.write(os.path.join(root, file),
                             os.path.relpath(os.path.join(root,file), os.path.join(workspace /"lora-out", '..'))
                     )
+
+        cls.__register_outputs('finetuned-model.zip', workspace)
 
 
         
