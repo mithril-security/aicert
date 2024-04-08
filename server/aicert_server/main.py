@@ -69,13 +69,14 @@ async def logGenerator():
         # if await request.is_disconnected():
         #     print("client disconnected")
         #     break
+        print("data chunk : {} ".format(line))
         yield line
         time.sleep(0.2)
 
 @app.get("/build/status", status_code=200)
 async def build_status():
-    log_generator = logGenerator()
-    return StreamingResponse(log_generator, media_type="text/event-stream")
+    # log_generator = logGenerator()
+    return StreamingResponse(logGenerator())
 
 @app.post("/submit_serve", status_code=202)
 def submit_serve(serve_request: Serve) -> None:
