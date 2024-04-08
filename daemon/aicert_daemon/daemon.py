@@ -135,7 +135,7 @@ class Dameon:
                 res.stderr
             )
 
-        return res.stdout
+        return str(res.stdout)
 
     @classmethod
     def init(cls, dir: Path) -> None:

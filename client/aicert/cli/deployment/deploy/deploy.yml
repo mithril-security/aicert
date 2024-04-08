@@ -37,6 +37,14 @@
       args:
         executable: /bin/bash
 
+    - name: Install Python 3.12
+      shell: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt update
+        sudo apt install python3.12 -y
+      args:
+        executable: /bin/bash
+
     - name: Install Caddy
       shell: |
         sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
