@@ -150,17 +150,12 @@ class Builder:
                 if image.startswith("@local/") else
                 docker_client.images.pull(image)
             )
-            print(workspace.absolute())
-            print(cmd)
             #logger.info(docker_client.images.get(image))
             cls.__event_log.input_image_event(image, resolved_image.id)
             cls.__resolved_images[image] = resolved_image
-            print("Resolved image")
         else:
             resolved_image = cls.__resolved_images[image]
-            print("image existed")
 
-        print(f"resolved image is : {resolved_image}")
         if gpus == "":
             return (
                 docker_client.containers.run(
@@ -275,11 +270,7 @@ class Builder:
                 #stderr=True,
                 detach=True, 
             )
-            print("CONTAINER HASH")
-            print(container_hash)
             
-            # for log in container_hash.logs(stdout=True, stderr=False, stream=True):
-            #     logger.info(log)
             log_streamer = LogStreamer(workspace / "log_model_dataset.log")
             log_streamer.write_stream(container_hash)
 
@@ -366,16 +357,13 @@ class Builder:
                     logger.info(input)
                     cls.__fetch_resource(input, workspace)
                     logger.info(cls.__docker_output_stream)
-                print("inputs fetched")
                 cls.__docker_run(
                     image=build_request.image,
                     cmd=build_request.cmdline,
                     workspace=workspace,
                 )
-                print("docker run for build complete")
 
                 cls.__register_outputs(build_request.outputs, workspace)
-                print("registering outputs complete")
 
             with cls.__serve_thread_lock:
                 cls.__serve_ready = True
@@ -411,8 +399,6 @@ class Builder:
         workspace: Path
         ) -> None:
         try: 
-            print("IN AXOLOTL RUN")
-            #with cls.__event_log_lock:
             cmd_accelerate = CmdLine(
                 #['CUDA_VISIBLE_DEVICES=""', "python", "-m", "axolotl.cli.preprocess", axolotl_config.filename], # Axolotl preprocessing
                 ["accelerate", "launch", "-m", "axolotl.cli.train", axolotl_config.filename],
@@ -422,7 +408,6 @@ class Builder:
             # The huggingface hub location should also be changed to workspace where models and datasets are available
             # The other environment variable that changes the cache is TRANSFORMERS_CACHE
             env_offline = ["HF_DATASETS_OFFLINE=1", "TRANSFORMERS_OFFLINE=1"] #, f"HUGGINGFACE_HUB_CACHE={workspace}"]
-            print(f"axolotl image: {axolotl_image}")
             container_hash = cls.__docker_run(
                 image=axolotl_image,
                 cmd=cmd_accelerate,
@@ -580,7 +565,6 @@ class Builder:
             if cls.__thread is not None and not cls.__thread.is_alive():
                 with cls.__event_log_lock:
                     if cls.__exception is not None:
-                        print("exception in poll build")
                         raise cls.__exception
                 return True
             else:
@@ -597,7 +581,6 @@ class Builder:
             if cls.__finetune_thread is not None and not cls.__finetune_thread.is_alive():
                 with cls.__event_log_lock:
                     if cls.__exception is not None:
-                        print("exception in poll build")
                         raise cls.__exception
                 return True
             else:

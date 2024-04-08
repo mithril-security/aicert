@@ -92,10 +92,10 @@ class Client:
         if self.__simulation_mode:
             warnings.warn("Running in simulation mode", RuntimeWarning)
     
-    @property
-    def daemon_address(self) -> str:
-        """Address of the configured deamon if available"""
-        return self.__cfg.runner.daemon if self.__cfg.runner is not None else ""
+    #@property
+    #def daemon_address(self) -> str:
+    #    """Address of the configured deamon if available"""
+    #    return self.__cfg.runner.daemon if self.__cfg.runner is not None else ""
     
     @property
     def is_simulation(self) -> bool:
@@ -184,14 +184,12 @@ class Client:
 
     @staticmethod
     def from_config_file(
-        dir: Path,
         interactive: bool = False,
         simulation_mode=False,
     ) -> "Client":
         """Load configuration from config file and returned a preconfigured client
     
         Args:
-            dir: (Path): Directory that contains the aicert.yaml file
             interactive (bool, default = False): When set to True, enables the
                 client to ask question such as file replacement approbation.
             simulation_mode (bool, default = False): When set to True, the client
@@ -222,14 +220,22 @@ class Client:
                 the client defaults to using the runner section of the config file.
         """
 
+        from .deployment.daemon import Daemon
+
         if not self.__simulation_mode:
-            runner_cfg = runner_cfg if runner_cfg is not None else self.__cfg.runner
-            if runner_cfg is None:
-                raise AICertException("No runner has been configured")
+            #runner_cfg = runner_cfg if runner_cfg is not None else self.__cfg.runner
+            #if runner_cfg is None:
+            #    raise AICertException("No runner has been configured")
             
-            res = requests.post(f"{runner_cfg.daemon}/launch_runner")
-            raise_for_status(res, "Cannot create runner")
-            res = res.json()
+            #res = requests.post(f"{runner_cfg.daemon}/launch_runner")
+            #raise_for_status(res, "Cannot create runner")
+            #res = res.json()
+            
+            aicert_home = Path.home() / ".aicert"
+            Daemon.init(aicert_home)
+            res = Daemon.launch_runner(aicert_home)
+            res = json.dumps(res)
+            print(f'VM ip is: {res["runner_ip"]}')
 
             self.__base_url = "https://aicert_worker"
 
@@ -331,29 +337,16 @@ class Client:
             except yaml.YAMLError as e:
                 raise AICertConfigFileException(e)
 
-        raise_for_status(
-             self.__session.post(
+        res = self.__session.post(
                  f"{self.__base_url}/axolotl/configuration",
                 data=axolotl_conf_string.json(),
                 headers={"Content-Type": "application/json"},
-             ),
+             )
+        raise_for_status(
+             res,
              "Failed sending axolotl configuration to server",
          )    
-    
-    # def submit_config(self, yaml_config: str) -> None:
-    #     """
-    #         Sends a yaml axolotl configuration format
 
-    #     Args:
-    #         yaml_config: Path to file upload
-    #     """
-
-    #     raise_for_status(
-    #         self.__session.post(
-    #             f"{self.__base_url}/axolotl/configuration",
-    #             data
-    #         )
-    #     )
 
     def submit_finetune(self) -> None:
         """Send a request to begin finetuning a model

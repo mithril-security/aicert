@@ -33,6 +33,7 @@ from .client import Client
 from aicert_common.logging import log
 from aicert_common.errors import log_errors_and_warnings
 
+#from .deployment.daemon import Daemon
 
 SIMULATION_MODE = os.getenv("AICERT_SIMULATION_MODE") is not None
 
@@ -53,22 +54,22 @@ def new(
     client.new_config(dir)
 
 
-@app.command()
-def axolotl_config(
-    config: Optional[str] = None,
-    dir: Annotated[Path, typer.Option()] = Path.cwd(),
-    interactive: Annotated[bool, typer.Option()] = True,
-):
-    """Creates an axolotl configuration instance on the server"""
-    with log_errors_and_warnings():
-        client = Client.from_config_file(
-            dir=dir,
-            interactive=interactive,
-            simulation_mode=SIMULATION_MODE,
-        )
-        config = config if config is not None else "axolotl_config.yaml"
-
-        client.submit_axolotl_config(dir, config)
+#@app.command()
+#def axolotl_config(
+#    config: Optional[str] = None,
+#    dir: Annotated[Path, typer.Option()] = Path.cwd(),
+#    interactive: Annotated[bool, typer.Option()] = True,
+#):
+#    """Creates an axolotl configuration instance on the server"""
+#    with log_errors_and_warnings():
+#        client = Client.from_config_file(
+#            dir=dir,
+#            interactive=interactive,
+#            simulation_mode=SIMULATION_MODE,
+#        )
+#        config = config if config is not None else "axolotl_config.yaml"
+#
+#        client.submit_axolotl_config(dir, config)
 
 
 @app.command()
@@ -82,14 +83,15 @@ def finetune(
     """
     with log_errors_and_warnings():
         client = Client.from_config_file(
-            dir=dir,
+            #dir=dir,
             interactive=interactive,
             simulation_mode=SIMULATION_MODE,
         )
         #log.info(f"Connecting to runner at {client.daemon_address}")
-        #client.connect()
+        client.connect()
 
-        client.submit_axolotl_config(dir, config)
+        res = client.submit_axolotl_config(dir, config)
+        print(res.json())
         client.submit_finetune()
 
         if not client.is_simulation:
@@ -163,3 +165,10 @@ def verify(
             attestation = f.read()
 
     client.verify_build_response(attestation, verbose=True)
+
+#aicert_home = Path.home() / ".aicert"
+#
+#@app.command()
+#def deploy():
+#    Daemon.init(aicert_home)
+#    Daemon.launch_runner(aicert_home)

@@ -83,18 +83,6 @@ def submit_serve(serve_request: Serve) -> None:
 
 @app.post("/finetune", status_code=202)
 def start_finetune() -> None:
-    # initialize config
-    #if axolotl_config.valid:
-    #    return JSONResponse(content={"Error":"Cannot upload more than one configuration to the server"}, status_code=406)
-
-    #print("Setting up axolotl configuration.")
-    #axolotl_config.initialize(axolotl_conf_string.axolotl_config)
-    #axolotl_config.parse()
-    #axolotl_config_location = WORKSPACE / "user_axolotl_config.yaml"
-    #axolotl_config.set_filename("user_axolotl_config.yaml")
-    #serialized_config = yaml.dump(axolotl_config.config)
-    #with open(axolotl_config_location, 'wb') as config:
-    #    config.write(serialized_config.encode("utf-8"))
     Builder.start_finetune(WORKSPACE, axolotl_config)
 
 # TODO: Implementation needed
