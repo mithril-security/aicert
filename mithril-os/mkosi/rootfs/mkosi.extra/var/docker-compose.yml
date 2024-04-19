@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  #attestation-generator:
+  #  # 1. waits for caddy to be ready
+  #  # 2. generate attestation document
+  #  # 3. write the document in a directory share with caddy
+  #  image: attestation-generator
+  #  restart: "no"
+  #  volumes:
+  #    - static_attestation:/srv
+  #    - /root/application_disk_root_hash:/application_disk_root_hash
+  #  devices:
+  #    - /dev/tpmrm0:/dev/tpmrm0
+  #  networks:
+  #    - constrained-attestation-generator
+
+  caddy:
+    image: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - /var/Caddyfile:/etc/caddy/Caddyfile
+      #- static_attestation:/srv
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      internet-access: {}
+      constrained-attestation-generator:
+        # The caddy service has multiple networks interfaces
+        # We create a network alias to have a way to 
+        # refer to the service exposed on the constrainted-attestation-generator network.
+        # This is needed to expose the caddy admin endpoint only over this interface and not
+        # over all of them (which would happen with bind 0.0.0.0)  
+        aliases:
+          - caddy-in-constrained-attestation-generator-network
+      #constrained-app: {}
+
+  app:
+    image: aicert-server
+    restart: unless-stopped
+    volumes:
+      - /workspace:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    devices:
+      - /dev/tpmrm0:/dev/tpmrm0
+    deploy:
+      resources:
+        reservations:
+          devices:          
+          - driver: "nvidia"
+            count: all
+            capabilities: [gpu]
+    networks:
+      - internet-access
+      - constrained-attestation-generator
+    #command: bash -c "
+    #    usermod -aG docker ${USER}
+    #  "
+    
+volumes:
+  caddy_data:
+  caddy_config:
+  #static_attestation:
+
+
+networks:
+  # The network config is a bit complicated because we want to :
+  # * remove internet access (inbound and outbound) from every container except for the reverse proxy
+  # * allow access to the caddy admin endpoint only to the attestation-generator (and not to the app) 
+  
+  # internet access has not the "internal: true" attribute so it will be exposed to the internet
+  # only caddy is in this network
+  internet-access:
+    driver: bridge
+
+  # Network with the attestation-generator and caddy.
+  # No internet access
+  constrained-attestation-generator:
+    driver: bridge
+    internal: true
+
+  # Network with the app and caddy.
+  # No internet access
+  #constrained-app:
+  #  driver: bridge
+  #  internal: true
