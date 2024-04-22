@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 
 from compute_expected_pcr4 import compute_golden_pcr4, Target
 import json

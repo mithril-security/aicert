@@ -77,19 +77,130 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 + **No slowdown** induced during training
 + **Azure support**
 
-### 🎯 Coming soon
-+ **Benchmark linking:** provide cryptographic binding of model weights to specific benchmarks that were run for this specific model
-+ **Multi-Cloud support** with AWS and GCP coverage
-+ **Single and multi-GPU support**
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 🚀 Getting started
+## Prerequisites
+To run this example, you will need acess to an Azure subscription with quota for VMs with GPUs.
+Install terraform and az cli. The client code requires python 3.11 or later.
+```console
+# qemu-utils to resize disk to conform to azure disk specifications
+sudo apt-get install qemu-utils tpm2-tools
+# Azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+# azcopy to copy disk to azure 
+https://aka.ms/downloadazcopy-v10-linux
+# Install python 3.11
+sudo apt-get install python3.11
+# Install terraform
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install terraform
+# Install earthly
+sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly && /usr/local/bin/earthly bootstrap --with-autocomplete'
+# Install poetry
+curl -sSL https://install.python-poetry.org | python3 -
+```
+Standard_NC96ads_A100_v4.
 
-- Check out our [“Getting started guide”](https://aicert.readthedocs.io/en/latest/docs/getting-started/get-started/), which will walk you through an example!
-- [Discover](https://aicert.readthedocs.io/en/latest/docs/getting-started/attestation/) how we bind model weights to training inputs and code
-- [Learn more](https://aicert.readthedocs.io/en/latest/docs/getting-started/tech-overview/) about the AICert architecture & workflow
+## 1 - Preparing the image
+AIcert finetunes models inside Mithril OS enclaves.
+The OS image packages the server, reverse proxy and axolotl container images within it.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+To make subsequent finetunes easier, the OS disk only needs to be built once and uploaded to Azure.
+
+The "create_MithrilOS.sh" script creates the disk, uploads it to Azure, and converts it into an OS image. It also generates the OS measurements.
+```console
+# log in to Azure CLI
+az login
+
+# Create OS image
+sudo ./create_MithrilOS.sh
+```
+
+## 2 - Install the client
+```console
+cd client
+# If your default python is below python3.10
+poetry env use python3.11
+poetry shell
+poetry install
+```
+
+## 3 - Finetune a model
+AIcert pefroms the following functions when the finetune command is run:
+- Creates a VM with the Mithril OS image
+- Connects to the server VM using aTLS
+- Sends the axolotl configuration in the aicert.yaml
+- Waits for the finetuned model and attestation report to be returned
+```console
+cd axolotl_yaml
+# There is a sample axolotl configuration present in this folder named aicert.yaml
+# This specifies the model, dataset, and training parameters
+aicert finetune
+```
+
+## 4 - Network policy
+
+While the network policy is part of the OS image, it is interesting to explore it further, as it is important for security and privacy. 
+
+The network policy that will be used will be included in the measurement of the OS. For instance, we will use the following one to allow data to be loaded inside the enclave, but nothing will leave it except the output of the AI model that will be sent back to the requester.
+
+The network policy file can be found in the annex.
+
+The measurement file contains the PCR values of the OS. A sample measurement file is as follows:
+```json
+{
+    "measurements": {
+        "0": "f3a7e99a5f819a034386bce753a48a73cfdaa0bea0ecfc124bedbf5a8c4799be",
+        "1": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+        "2": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+        "3": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+        "4": "dd2ccfebe24db4c43ed6913d3cbd7f700395a88679d3bb3519ab6bace1d064c0",
+        "12": "0000000000000000000000000000000000000000000000000000000000000000",
+        "13": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+}
+```
+
+To understand better what it means, each PCR measures different parts of the stack:
+PCRs  0, 1, 2, and 3 are firmware related measurements.
+PCR 4 measures the UKI (initrd, kernel image, and boot stub)
+PCR 12 and 13 measure the kernel command line and system extensions. We do not want any of those to be enabled, so we ensure they are 0s.
+
+
+## Annex - Information on network Policy and Isolation
+The network policy is implemented individually for the k3s pods as well as for the host.
+The host network is controlled by iptables rules. The exact rules are:
+```
+*filter
+# Allow localhost connections to permit communication between k3s components
+-A INPUT -p tcp -s localhost -d localhost -j ACCEPT
+-A OUTPUT -p tcp -s localhost -d localhost -j ACCEPT
+# Allow connection to Azure IMDS to get the VM Instance userdata
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A OUTPUT -p tcp -d 169.254.169.254 --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -d 168.63.129.16 --dport 80 -j ACCEPT
+# DNS over UDP
+-A INPUT -p udp --sport 53 -j ACCEPT
+-A INPUT -p udp --dport 53 -j ACCEPT
+-A OUTPUT -p udp --sport 53 -j ACCEPT
+-A OUTPUT -p udp --dport 53 -j ACCEPT
+# DNS over TCP
+-A INPUT -p tcp --sport 53 -j ACCEPT
+-A INPUT -p tcp --dport 53 -j ACCEPT
+-A OUTPUT -p tcp --sport 53 -j ACCEPT
+-A OUTPUT -p tcp --dport 53 -j ACCEPT
+# Drop all other traffic
+-A OUTPUT -j DROP
+-A INPUT -j DROP
+COMMIT
+```
+In the repository they can be found in [rules.v4](mithril-os/mkosi/rootfs/mkosi.extra/etc/iptables/rules.v4) and [rules.v6](mithril-os/mkosi/rootfs/mkosi.extra/etc/iptables/rules.v6)
+
+These rules block all incoming and outgoing traffic except for DNS queries and localhost connections. The rules are applied on boot by the iptables-persistent package. You can verify that the package is installed if you take a look at the [mkosi.conf](mithril-os/mkosi/rootfs/mkosi.conf.j2) file.
+
+When the client tries to connect to the server it first retrieves the attestation report which is a quote from the TPM. The client uses the measurements stored in the `security_config` to validate the quote received from the TPM. 
+
+If there are any changes in the host networking rules, it will reflect in the PCR values (PCR 4) of the OS measurement and the connection will be terminated.
 
 ## ⚠️ Limitations
 
