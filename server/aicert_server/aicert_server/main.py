@@ -25,7 +25,7 @@ from sh import tail
 import time
 from sse_starlette.sse import EventSourceResponse
 
-from aicert_common.protocol import Build, Serve, FileList, Resource, AxolotlConfigString
+from aicert_common.protocol import FileList, AxolotlConfigString
 from aicert_server.config_parser import AxolotlConfig
 from aicert_server.builder import Builder, SIMULATION_MODE
 from aicert_server.tpm import tpm_extend_pcr, tpm_read_pcr

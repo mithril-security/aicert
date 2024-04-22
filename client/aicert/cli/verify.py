@@ -5,7 +5,6 @@ import subprocess
 import tempfile
 import OpenSSL
 from OpenSSL import crypto
-import requests
 import yaml
 import pkgutil
 from aicert_common.logging import log

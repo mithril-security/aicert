@@ -25,8 +25,8 @@ class AICertSubProcessException(AICertException):
         err = f"Command `{self.__command}` terminated with non-zero return code: {self.__retcode}\nstdout: {self.__stdout}\nstderr: {self.__stderr}"
         super().__init__(err)
 
-class Daemon:
-    """Python API of the daemon.
+class Deployer:
+    """Python API of the Deployer.
     
     This class contains methods that cover the main steps for launching AICert runners.
     These methods rely on terraform to deploy runners.
@@ -140,7 +140,7 @@ class Daemon:
 
     @classmethod
     def init(cls, dir: Path) -> None:
-        """Initailize the daemon
+        """Initailize the Deployer
 
         - Check dependencies
         - Create workding directory
@@ -165,10 +165,10 @@ class Daemon:
         Args:
             dir (Path): Working directory
         """
-        Daemon.__tf_init(dir)
-        Daemon.__tf_apply(dir)
+        Deployer.__tf_init(dir)
+        Deployer.__tf_apply(dir)
 
-        vm_ip = Daemon.__run_subprocess(
+        vm_ip = Deployer.__run_subprocess(
             ["terraform", "output", "-raw", "public_ip_address"],
             cwd=dir,
         )
