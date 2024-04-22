@@ -99,7 +99,6 @@ sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/downloa
 # Install poetry
 curl -sSL https://install.python-poetry.org | python3 -
 ```
-Standard_NC96ads_A100_v4.
 
 ## 1 - Preparing the image
 AIcert finetunes models inside Mithril OS enclaves.
@@ -125,7 +124,24 @@ poetry shell
 poetry install
 ```
 
-## 3 - Finetune a model
+## 3 - Configuration
+The resource group name and region can be set in the [upload_config.sh](upload_config.sh)
+```console
+AZ_RESOURCE_GROUP="your-resource-group"
+AZ_REGION="your-region"
+```
+
+The size of the Azure VM can be set in [variables.tf](client/aicert/cli/deployment/deploy/variables.tf)
+```console
+variable "instance_type" {
+  type        = string
+  default     = "Standard_NC24ads_A100_v4"
+  description = "Type/Size of VM to create."
+}
+```
+The default size is Standard_NC24ads_A100_v4
+
+## 4 - Finetune a model
 AIcert pefroms the following functions when the finetune command is run:
 - Creates a VM with the Mithril OS image
 - Connects to the server VM using aTLS
@@ -138,7 +154,7 @@ cd axolotl_yaml
 aicert finetune
 ```
 
-## 4 - Network policy
+## 5 - Network policy
 
 While the network policy is part of the OS image, it is interesting to explore it further, as it is important for security and privacy. 
 
