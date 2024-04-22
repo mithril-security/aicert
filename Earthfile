@@ -93,7 +93,6 @@ mithril-os:
 
     COPY mithril-os/mkosi/rootfs .
     RUN /root/.local/bin/render_template "../$OS_CONFIG" mkosi.conf.j2
-    COPY mithril-os/measured_setup/* mkosi.extra/opt/measured_setup/
 
     # RUN --privileged error
 

@@ -1,29 +1,3 @@
-"""AICert CLI
-
-CLI tool for certified builds and deployments
-
-Typical workflow:
-1. use new subcommand to set up a configuration
-2. modify the configuration to suit your needs
-3. use build subcommand to run the build on an
-   aicert runner and get back your build
-   artifacts and an attestation
-4. if your configuration file specifies a serve
-   section, the correponding server (whose code
-   is now attested) will be launched by the runner
-5. verify the attestation
-
-AICert can be run:
-- either locally in simulation mode, in which case
-  youn need no daemon but a running instance of the
-  aicert server (use the aicert-server package)
-- either on Azure CVMs, in which case you need to setup
-  a local daemon to interact with Azure
-  (use the aicert-daemon package)
-
-See the aicert-common package for more on the configuration file.
-"""
-
 import os
 from pathlib import Path
 import typer
@@ -52,8 +26,12 @@ def finetune(
             interactive=interactive,
             simulation_mode=SIMULATION_MODE,
         )
+
+        # Creates a VM and connects to it using aTLS
+        print("Deploying VM and initializing server")
         client.connect()
 
+        print("Submitting finetune request")
         res = client.submit_axolotl_config(dir, config)
         
         client.submit_finetune()
@@ -64,7 +42,13 @@ def finetune(
 
             with (dir / "attestation.json").open("wb") as f:
                 f.write(attestation)
+        
+        # Verify attestation report
+        client.verify_attestation(attestation, verbose=True)
 
+        print("Sample Output Link: https://www.example.com")
+
+        print("Destroying VM")
         #client.disconnect()
 
 

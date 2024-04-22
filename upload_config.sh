@@ -3,3 +3,4 @@
 
 AZ_RESOURCE_GROUP="your-resource-group"
 AZ_REGION="your-region"
+GALLERY_NAME="your-gallery"

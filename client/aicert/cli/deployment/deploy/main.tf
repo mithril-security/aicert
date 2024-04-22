@@ -22,14 +22,8 @@ provider "azurerm" {
   features {}
 }
 
-resource "random_pet" "rg_name" {
-  prefix = var.resource_group_name_prefix
-}
-
 data "azurerm_resource_group" "rg" {
-  #location = var.resource_group_location
-  name = "test-triton_group"
-  #name     = random_pet.rg_name.id
+  name     = var.resource_group_name
 }
 
 # Create virtual network
@@ -134,7 +128,7 @@ resource "tls_private_key" "example_ssh" {
 # Get MithrilOS image from gallery
 data "azurerm_shared_image" "mithrilos" {
   name                = "aicert_image"
-  gallery_name        = "aicert_os_gallery"
+  gallery_name        = var.gallery_name
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 

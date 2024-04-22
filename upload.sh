@@ -49,37 +49,23 @@ echo "$OS_DISK_NAME"
 
 ## Create OS Image
 DISK=$(az disk show -n $OS_DISK_NAME -g $AZ_RESOURCE_GROUP --query "id" | xargs )
-echo $DISK
-GALLERY="aicert_os_gallery"
 IMAGEDEF="aicert_image"
 
-az sig create --resource-group $AZ_RESOURCE_GROUP --gallery-name $GALLERY
+az sig create --resource-group $AZ_RESOURCE_GROUP --gallery-name $GALLERY_NAME
 
 az sig image-definition create \
-    --resource-group $AZ_RESOURCE_GROUP --location eastus --gallery-name $GALLERY \
+    --resource-group $AZ_RESOURCE_GROUP --location eastus --gallery-name $GALLERY_NAME \
     --gallery-image-definition $IMAGEDEF --publisher TrustedLaunchPublisher --offer TrustedLaunchOffer \
     --sku TrustedLaunchSku --os-type Linux --os-state Generalized \
     --hyper-v-generation V2 --features SecurityType=TrustedLaunch
 
 
 az sig image-version create --resource-group $AZ_RESOURCE_GROUP \
-    --gallery-name $GALLERY --gallery-image-definition $IMAGEDEF \
+    --gallery-name $GALLERY_NAME --gallery-image-definition $IMAGEDEF \
     --gallery-image-version 1.0.0 \
     --os-snapshot $DISK
 
 
-## Create VM
+echo "resource_group_name = \"$AZ_RESOURCE_GROUP\"" >> client/aicert/cli/deployment/deploy/terraform.tfvars
+echo "gallery_name = \"$GALLERY_NAME\"" >> client/aicert/cli/deployment/deploy/terraform.tfvars
 
-VM=BlindllamaVM
-
-#az vm create \
-#    -g $AZ_RESOURCE_GROUP \
-#    -n $VM \
-#    --size Standard_DS1_v2 \
-#    --attach-os-disk $OS_DISK_NAME\
-#    --attach-data-disks $APPLICATION_DISK_NAME \
-#    --public-ip-address-dns-name $VM \
-#    --security-type TrustedLaunch \
-#    --enable-secure-boot false \
-#    --enable-vtpm true \
-#    --os-type linux

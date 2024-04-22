@@ -139,10 +139,8 @@ class Client:
         """
 
         if not self.__simulation_mode:           
-            #Deployer.init(self.__tf_home)
-            #res = Deployer.launch_runner(self.__tf_home)
-
-            res = {'runner_ip': '52.179.14.230'}
+            Deployer.init(self.__tf_home)
+            res = Deployer.launch_runner(self.__tf_home)
 
             self.__base_url = "https://aicert_worker"
 
@@ -192,7 +190,7 @@ class Client:
         from requests.packages.urllib3.util.retry import Retry
 
         session = requests.Session()
-        retries = Retry(total=15, backoff_factor=0.5, status_forcelist=[429, 500, 502, 503, 504])
+        retries = Retry(total=15, backoff_factor=0.2, status_forcelist=[429, 500, 502, 503, 504])
         session.mount(
                 self.__base_url, ForcedIPHTTPSAdapter(dest_ip=server_ip, max_retries=retries)
             )
