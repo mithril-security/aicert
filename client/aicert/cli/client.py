@@ -1,6 +1,5 @@
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
-import json
 from pathlib import Path
 import pkgutil
 import requests
@@ -11,6 +10,7 @@ from typing import Optional
 import urllib.parse
 import yaml
 import warnings
+import json
 
 from aicert_common.protocol import ConfigFile, FileList, Runner, Build, Serve, AxolotlConfigString
 from aicert_common.logging import log
@@ -347,7 +347,6 @@ class Client:
              "Failed sending axolotl configuration to server",
          )    
 
-
     def submit_finetune(self) -> None:
         """Send a request to begin finetuning a model
         """
@@ -357,6 +356,21 @@ class Client:
              ),
              "Failed sending finetune request to server",
          )    
+        sleep(2)
+    
+        with self.__session.get(f"{self.__base_url}/build/status", stream=True) as stream_resp:
+            event_data = ""
+            for line in stream_resp.iter_lines():
+                # print(line)
+                if line != b'':
+                    event_data = line.decode("utf-8")
+                    event_data = event_data.split('message')[1]
+                    if len(event_data.split('": "b\\')) > 0:
+                        event_data = event_data.split('": "b\\')[1]
+                    elif len(event_data.split('": "b\\"')) > 0:
+                        event_data = event_data.split('": "b\\"')[1]
+                    event_data = event_data.split("\\n")[0]
+                    print(event_data)
 
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
         """Send a submit_serve request to the runner

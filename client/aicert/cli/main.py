@@ -91,7 +91,7 @@ def finetune(
         client.connect()
 
         res = client.submit_axolotl_config(dir, config)
-        print(res.json())
+        # print(res.json())
         client.submit_finetune()
 
         if not client.is_simulation:

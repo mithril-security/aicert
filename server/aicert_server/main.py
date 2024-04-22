@@ -24,6 +24,10 @@ import logging
 from sh import tail
 import time
 from sse_starlette.sse import EventSourceResponse
+import json
+import asyncio
+import subprocess
+import select
 
 from aicert_common.protocol import Build, Serve, FileList, Resource, AxolotlConfigString
 from .config_parser import AxolotlConfig
@@ -65,18 +69,22 @@ def submit_build(build_request: Build) -> None:
     Builder.submit_build(build_request, WORKSPACE, axolotl_config)
 
 async def logGenerator():
-    for line in tail("-f", WORKSPACE / "log_model_dataset.log", _iter=True):
-        # if await request.is_disconnected():
-        #     print("client disconnected")
-        #     break
-        print("data chunk : {} ".format(line))
-        yield line
-        time.sleep(0.2)
+    f = subprocess.Popen(['tail','-F', WORKSPACE / "log_model_dataset.log"], stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    p = select.poll()
+    p.register(f.stdout)
 
-@app.get("/build/status", status_code=200)
+    while True:
+        data = ""
+        if p.poll(1):
+            data = f.stdout.readline()
+        yield f'{data}' + '\n'
+        await asyncio.sleep(1)
+
+
+@app.get("/build/status")
 async def build_status():
-    # log_generator = logGenerator()
-    return StreamingResponse(logGenerator())
+    log_generator = logGenerator()
+    return StreamingResponse(log_generator, media_type='text/event-stream')
 
 @app.post("/submit_serve", status_code=202)
 def submit_serve(serve_request: Serve) -> None:
