@@ -78,7 +78,7 @@ async def logGenerator():
         if p.poll(1):
             data = f.stdout.readline()
         yield f'{data}' + '\n'
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
 
 @app.get("/build/status")

@@ -6,6 +6,7 @@ import requests
 import tempfile
 from time import sleep
 import typer
+from rich import print
 from typing import Optional
 import urllib.parse
 import yaml
@@ -361,16 +362,12 @@ class Client:
         with self.__session.get(f"{self.__base_url}/build/status", stream=True) as stream_resp:
             event_data = ""
             for line in stream_resp.iter_lines():
-                # print(line)
                 if line != b'':
                     event_data = line.decode("utf-8")
-                    event_data = event_data.split('message')[1]
-                    if len(event_data.split('": "b\\')) > 0:
-                        event_data = event_data.split('": "b\\')[1]
-                    elif len(event_data.split('": "b\\"')) > 0:
-                        event_data = event_data.split('": "b\\"')[1]
-                    event_data = event_data.split("\\n")[0]
-                    print(event_data)
+                    event_data = event_data[92:]
+                    if len(event_data) >= 10:
+                        event_data = event_data[:-10]
+                    print(event_data.strip("\\"))
 
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
         """Send a submit_serve request to the runner
