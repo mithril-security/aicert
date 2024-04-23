@@ -54,7 +54,7 @@ IMAGEDEF="aicert_image"
 az sig create --resource-group $AZ_RESOURCE_GROUP --gallery-name $GALLERY_NAME
 
 az sig image-definition create \
-    --resource-group $AZ_RESOURCE_GROUP --location eastus --gallery-name $GALLERY_NAME \
+    --resource-group $AZ_RESOURCE_GROUP --location $AZ_REGION --gallery-name $GALLERY_NAME \
     --gallery-image-definition $IMAGEDEF --publisher TrustedLaunchPublisher --offer TrustedLaunchOffer \
     --sku TrustedLaunchSku --os-type Linux --os-state Generalized \
     --hyper-v-generation V2 --features SecurityType=TrustedLaunch

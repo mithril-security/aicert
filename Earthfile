@@ -70,21 +70,23 @@ mithril-os:
 
     WORKDIR /workdir/rootfs/mkosi.extra/opt/container-images
 
+    COPY export_image_ids.sh .
+
     WITH DOCKER --pull caddy:latest
-        RUN docker save -o caddy-image.tar caddy:latest
+        RUN docker save -o caddy-image.tar caddy:latest && ./export_image_ids.sh caddy:latest
     END
 
     WITH DOCKER --load aicert-server:latest=+aicert-server-image
-        RUN docker save -o aicert-server-image.tar aicert-server:latest
+        RUN docker save -o aicert-server-image.tar aicert-server:latest && ./export_image_ids.sh aicert-server:latest
     END
 
     WITH DOCKER --load aicert-base:latest=+aicert-base-image
-        RUN docker save -o aicert-base-image.tar aicert-base:latest
+        RUN docker save -o aicert-base-image.tar aicert-base:latest && ./export_image_ids.sh aicert-base:latest
     END
 
     WITH DOCKER --pull winglian/axolotl:main-py3.11-cu121-2.1.2
         RUN docker tag winglian/axolotl:main-py3.11-cu121-2.1.2 axolotl:latest && \
-            docker save -o axolotl.tar axolotl:latest
+            docker save -o axolotl.tar axolotl:latest && ./export_image_ids.sh axolotl:latest
     END
 
 
@@ -102,6 +104,7 @@ mithril-os:
 
     SAVE ARTIFACT image.raw AS LOCAL local/os_disk.raw
     SAVE ARTIFACT image.manifest AS LOCAL local/os_disk.manifest
+    SAVE ARTIFACT /workdir/rootfs/mkosi.extra/opt/container-images/container_ids.json AS LOCAL local/container_ids.json
 
 
 aicert-server-image:

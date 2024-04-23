@@ -145,6 +145,8 @@ def check_event_log(
     pcr_end,
     initial_pcr="0000000000000000000000000000000000000000000000000000000000000000",
 ):
+    from .security_config import CONTAINER_MEASUREMENTS
+
     # Starting from the expected initial PCR state
     # We replay the event extending the PCR
     # At the end we get the expected PCR value
@@ -156,6 +158,21 @@ def check_event_log(
 
     # Both PCR MUST match, else something sketchy is going on!
     assert pcr_end == current_pcr.hex()
+
+    # Check ids of containers used
+    for e in input_event_log:
+        if e["event_type"]=="input_image":
+            if e["content"]["spec"]["image_name"] not in CONTAINER_MEASUREMENTS:
+                raise AttestationError(f"Unexpected container image present in event log[{e["content"]["spec"]["image_name"]}], ",)
+            if e["content"]["spec"]["resolved"]["id"] != CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]:
+                raise AttestationError(
+                    f"Wrong image id for image [{e["content"]["spec"]["image_name"]}], "
+                    f"expected {CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]}, "
+                    f"got {e["content"]["spec"]["resolved"]["id"]} instead"
+                )
+            
+
+
 
     # Now we can return the parsed event log
     event_log = [json.loads(e) for e in input_event_log]
