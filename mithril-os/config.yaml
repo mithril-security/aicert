@@ -1,0 +1,5 @@
+# debug mode enables console access via a root user with password "root"
+# debug mode is insecure
+debug: false
+# Whether to install Nvidia drivers in the rootfs (adds ~5-10mn to image build time)
+nvidiaDriver: true

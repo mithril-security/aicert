@@ -1,0 +1,11 @@
+[Unit]
+Description=Launch aicert server
+After=docker.service
+Requires=docker.service
+
+[Service]
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'set -e; /var/launch-aicert.sh'
+
+[Install]
+WantedBy=multi-user.target

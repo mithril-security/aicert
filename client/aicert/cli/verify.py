@@ -5,7 +5,6 @@ import subprocess
 import tempfile
 import OpenSSL
 from OpenSSL import crypto
-import requests
 import yaml
 import pkgutil
 from aicert_common.logging import log
@@ -69,10 +68,6 @@ def verify_ak_cert(cert_chain: list[bytes]) -> bytes:
         ref_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1,cert_chain[2])
         log.info(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ref_cert).decode('ascii'))
         log.error("Invalid AK certificate")
-        # TODO: In the future we'll want to raise an error
-        # But for now Azure vTPM does not have an official certificate chain
-        # So the checks can randomly fail
-        # raise AttestationError("Invalid AK certificate")
 
     return cert_chain[0]
 
@@ -159,8 +154,6 @@ def check_event_log(
         hash_event = hashlib.sha256(e.encode()).digest()
         current_pcr = hashlib.sha256(current_pcr + hash_event).digest()
 
-    log.info(f"PCR in quote : {pcr_end}")
-    log.info(f"Expected PCR based on event log and initial PCR {current_pcr.hex()}")
     # Both PCR MUST match, else something sketchy is going on!
     assert pcr_end == current_pcr.hex()
 
@@ -168,6 +161,25 @@ def check_event_log(
     event_log = [json.loads(e) for e in input_event_log]
 
     return event_log
+
+
+def check_os_pcrs(attestation_doc, simulation_mode):
+    from .security_config import EXPECTED_OS_MEASUREMENTS
+    os_measurements = EXPECTED_OS_MEASUREMENTS["SIMULATION_QEMU"] if simulation_mode else EXPECTED_OS_MEASUREMENTS["AZURE_TRUSTED_LAUNCH"]
+
+    for (
+            index,
+            expected_pcr_value,
+        ) in os_measurements.items():
+            if index not in attestation_doc["pcrs"]["sha256"]:
+                raise AttestationError((f"Quote is missing PCR[{index}], ",))
+
+            if attestation_doc["pcrs"]["sha256"][index] != expected_pcr_value:
+                raise AttestationError(
+                    f"Wrong PCR value for PCR[{index}], "
+                    f"expected {expected_pcr_value}, "
+                    f"got {attestation_doc["pcrs"]["sha256"][index]} instead"
+                )
 
 
 def decode_b64_encoding(x):

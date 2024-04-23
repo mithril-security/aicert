@@ -1,0 +1,23 @@
+[Distribution]
+Distribution=debian
+Release=bookworm
+Architecture=x86-64
+
+[Content]
+MakeInitrd=yes
+
+{% if debug %}
+RootPassword=root
+{% endif %}
+
+[Output]
+Format=cpio
+ManifestFormat = json
+
+[Content]
+Packages=linux-image-cloud-amd64
+         systemd
+         udev
+         kmod
+         tpm2-tools
+         

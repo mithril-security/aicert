@@ -1,0 +1,17 @@
+{
+  # We only expose the caddy admin endpoint to the attestation-generator
+  # by listening only on the corresponding network interface
+  admin caddy-in-constrained-attestation-generator-network:2019
+}
+
+
+aicert_worker {
+	# Bind to all network interfaces
+	bind 0.0.0.0
+
+	# Use self-signed certificates
+	tls internal
+
+	# Reverse proxy to the service
+	reverse_proxy app:80
+}

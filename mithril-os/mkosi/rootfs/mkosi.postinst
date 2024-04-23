@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "Removing Systemd GPT auto generator"
+rm $BUILDROOT/usr/lib/systemd/system-generators/systemd-gpt-auto-generator
+
+#echo "Install K3S"
+#INSTALL_K3S_EXEC="--disable=traefik" INSTALL_K3S_SKIP_DOWNLOAD=true INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SYSTEMD_DIR=$BUILDROOT/etc/systemd/system INSTALL_K3S_BIN_DIR=$BUILDROOT/usr/local/bin $BUILDROOT/usr/local/bin/install.sh

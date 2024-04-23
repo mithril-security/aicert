@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "aicert-common"
+version = "0.1.0"
+description = ""
+authors = ["Lucas Bourtoule <lucas.bourtoule@mithrilsecurity.io>"]
+readme = "README.md"
+packages = [{include = "aicert_common"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = { version = "^2.6.3" }
+rich = "^13.4.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
