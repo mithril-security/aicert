@@ -81,9 +81,9 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 ## Prerequisites
 To run this example, you will need acess to an Azure subscription with quota for VMs with GPUs.
 Install terraform and az cli. The client code requires python 3.11 or later.
-```console
+```bash
 # qemu-utils to resize disk to conform to azure disk specifications
-sudo apt-get install qemu-utils tpm2-tools
+sudo apt-get update && sudo apt-get install qemu-utils tpm2-tools pesign
 # Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 # azcopy to copy disk to azure 
@@ -107,7 +107,7 @@ The OS image packages the server, reverse proxy and axolotl container images wit
 To make subsequent finetunes easier, the OS disk only needs to be built once and uploaded to Azure.
 
 The "create_MithrilOS.sh" script creates the disk, uploads it to Azure, and converts it into an OS image. It also generates the OS measurements.
-```console
+```bash
 # log in to Azure CLI
 az login
 
@@ -116,7 +116,7 @@ sudo ./create_MithrilOS.sh
 ```
 
 ## 2 - Install the client
-```console
+```bash
 cd client
 # If your default python is below python3.10
 poetry env use python3.11
@@ -126,13 +126,13 @@ poetry install
 
 ## 3 - Configuration
 The resource group name and region can be set in the [upload_config.sh](upload_config.sh)
-```console
+```bash
 AZ_RESOURCE_GROUP="your-resource-group"
 AZ_REGION="your-region"
 ```
 
 The size of the Azure VM can be set in [variables.tf](client/aicert/cli/deployment/deploy/variables.tf)
-```console
+```bash
 variable "instance_type" {
   type        = string
   default     = "Standard_NC24ads_A100_v4"
@@ -147,7 +147,7 @@ AIcert pefroms the following functions when the finetune command is run:
 - Connects to the server VM using aTLS
 - Sends the axolotl configuration in the aicert.yaml
 - Waits for the finetuned model and attestation report to be returned
-```console
+```bash
 cd axolotl_yaml
 # There is a sample axolotl configuration present in this folder named aicert.yaml
 # This specifies the model, dataset, and training parameters
