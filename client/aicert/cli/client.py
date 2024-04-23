@@ -367,7 +367,7 @@ class Client:
                     event_data = event_data[92:]
                     if len(event_data) >= 10:
                         event_data = event_data[:-10]
-                    print(event_data.strip("\\"))
+                    print(event_data.replace("\\", ""))
 
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
         """Send a submit_serve request to the runner
