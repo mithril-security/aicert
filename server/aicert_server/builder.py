@@ -269,7 +269,7 @@ class Builder:
             )
             
             log_streamer_dataset = LogStreamer(workspace / "log_model_dataset.log")
-            log_streamer_dataset.write_stream(container_hash)
+            log_streamer_dataset.write_stream(container_hash, False)
 
             resource_hash = cls.__docker_run(
                 cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
@@ -427,7 +427,7 @@ class Builder:
 
             # Log streamer registers the stdout for the docker into the log file log_axolotl.log
             log_streamer_finetune = LogStreamer(workspace / "log_model_dataset.log")
-            log_streamer_finetune.write_stream(container_hash)
+            log_streamer_finetune.write_stream(container_hash, True)
 
         except HTTPException as e:
             cls.__exception = e

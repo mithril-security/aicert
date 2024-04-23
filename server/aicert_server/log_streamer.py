@@ -25,10 +25,13 @@ class LogStreamer:
         self.filehandler.setFormatter(formatter)
         self.logger.addHandler(self.filehandler)
 
-    def write_stream(self, container: docker.models.containers.Container):
+    def write_stream(self, container: docker.models.containers.Container, last_stream: bool):
         self.__setup_logger()
         for log in container.logs(stdout=True, stderr=False, stream=True):
             self.logger.info(f"{log}")
-
+        if last_stream:
+            self.logger.info(f"EOF")
         self.logger.removeHandler(self.filehandler)
         self.filehandler.close()
+
+    

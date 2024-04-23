@@ -364,10 +364,13 @@ class Client:
             for line in stream_resp.iter_lines():
                 if line != b'':
                     event_data = line.decode("utf-8")
+                    if "EOF" in event_data:
+                        break
                     event_data = event_data[92:]
                     if len(event_data) >= 10:
                         event_data = event_data[:-10]
                     print(event_data.replace("\\", ""))
+
 
     def submit_serve(self, serve_cfg: Optional[Serve] = None) -> None:
         """Send a submit_serve request to the runner
