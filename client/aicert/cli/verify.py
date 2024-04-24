@@ -157,18 +157,20 @@ def check_event_log(
         current_pcr = hashlib.sha256(current_pcr + hash_event).digest()
 
     # Both PCR MUST match, else something sketchy is going on!
-    assert pcr_end == current_pcr.hex()
+    if not pcr_end == current_pcr.hex():
+        raise AttestationError(f"Event log does not match attestation report",)
 
     # Check ids of containers used
     for e in input_event_log:
+        e = json.loads(e)
         if e["event_type"]=="input_image":
             if e["content"]["spec"]["image_name"] not in CONTAINER_MEASUREMENTS:
-                raise AttestationError(f"Unexpected container image present in event log[{e["content"]["spec"]["image_name"]}], ",)
-            if e["content"]["spec"]["resolved"]["id"] != CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]:
+                raise AttestationError(f"Unexpected container image present in event log [{e["content"]["spec"]["image_name"]}], ",)
+            if e["content"]["resolved"]["id"] != CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]:
                 raise AttestationError(
                     f"Wrong image id for image [{e["content"]["spec"]["image_name"]}], "
                     f"expected {CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]}, "
-                    f"got {e["content"]["spec"]["resolved"]["id"]} instead"
+                    f"got {e["content"]["resolved"]["id"]} instead"
                 )
             
 

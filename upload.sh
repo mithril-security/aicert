@@ -2,7 +2,7 @@
 
 set -e
 
-# Load config
+## Load config
 source upload_config.sh
 
 upload_disk () {
@@ -33,7 +33,7 @@ upload_disk () {
     az disk revoke-access -n $DISK_NAME -g $AZ_RESOURCE_GROUP
 }
 
-# Create a resource group as defined in the upload config
+## Create a resource group as defined in the upload config
 az group create -l $AZ_REGION -n $AZ_RESOURCE_GROUP 
 
 ## Randomised ID to make disk and VM name unique for each run of this script 
@@ -65,7 +65,7 @@ az sig image-version create --resource-group $AZ_RESOURCE_GROUP \
     --gallery-image-version 1.0.0 \
     --os-snapshot $DISK
 
+## Create terraform variables for resource group and gallery name
+file="client/aicert/cli/deployment/deploy/terraform.tfvars"
 
-echo "resource_group_name = \"$AZ_RESOURCE_GROUP\"" >> client/aicert/cli/deployment/deploy/terraform.tfvars
-echo "gallery_name = \"$GALLERY_NAME\"" >> client/aicert/cli/deployment/deploy/terraform.tfvars
-
+echo -e "resource_group_name = \"$AZ_RESOURCE_GROUP\"\ngallery_name = \"$GALLERY_NAME\"" > $file 
