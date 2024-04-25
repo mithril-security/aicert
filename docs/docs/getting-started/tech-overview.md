@@ -10,7 +10,7 @@ ________________________________________________________
 
 AICert is composed of the following elements:
 
-+ **Base image**  containing our selected OS for reproducibility
++ **Base image**  containing Mithril OS for reproducibility
 + **The Server**, which is responsible for running training and creating our cryptographic proof file
 + **CLI tool**, which enables AI builders to supply model inputs, launch training and receive proof file
 + **Client-side Python SDK** to verify and inspect AI certificates
@@ -27,10 +27,11 @@ ________________________________________________________
 When the AI builder launches the `aicert` CLI command. Under the hood, AICert will:
 
 + Provision a VM with the correct hardware/software stack, PCR registers 0-13 will be updated at boot time
-+ Hash input values and register them to PCR14
++ Hash server certificate and register them to PCR15
++ Hash input values and register them to PCR16
 + Build a container with all the necessary inputs
-+ Execute main.py code or alternative entrypoint command
-+ Hash outputs and register them to PCR15
++ Execute axolotl fintuning
++ Hash outputs and register them to PCR16
 + Request a signed quote from the Cloud provider containing all PCR values
 + Standardize quote details and return AI certificate to the end user
 
