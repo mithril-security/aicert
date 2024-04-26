@@ -261,7 +261,7 @@ class Client:
                     if len(event_data) >= 10:
                         event_data = event_data[:-10]
                     print(event_data.replace("\\", ""))
-        # sleep(500)
+        sleep(50)
         ## Upload to storage account 
         account_name = 'aicertstorage'
         container_name = 'aicertcontainer'

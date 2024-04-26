@@ -46,7 +46,7 @@ def finetune(
         # Verify attestation report
         # client.verify_attestation(attestation, verbose=True)
 
-        print("Sample Output Link: https://www.example.com")
+        print("Sample Output Link: https://aicertstorage.blob.core.windows.net/aicertcontainer/finetuned-model.zip")
 
         print("Destroying VM")
         #client.disconnect()
