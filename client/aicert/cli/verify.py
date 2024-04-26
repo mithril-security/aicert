@@ -174,8 +174,6 @@ def check_event_log(
                 )
             
 
-
-
     # Now we can return the parsed event log
     event_log = [json.loads(e) for e in input_event_log]
 
