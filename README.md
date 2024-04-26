@@ -161,6 +161,25 @@ cd axolotl_yaml
 aicert finetune
 ```
 
+### 4.1 - Changes to the Axolotl configuration file
+When Axolotl runs the fine-tuning, the container has no connection to the outside and can not pull other models that those gathered at the initialization part. 
+Pining the model and dataset makes it possible to verify the versionning and track exactly which dataset and model were used on the procedure. 
+Some changes must be taken into account when supplying an Axolotl configuration yaml. 
+
+- The model name that is specified must be pinned to a specific version :
+  ```yaml
+  # example:
+  base_model: TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T@sha1:036fa4651240b9a1487f709833b9e4b96b4c1574
+  ``` 
+- The dataset name must also be pinned to a specific version and the relative path to the data must also be specified in name (This is due to Axolotl not being able to pull a dataset locally).
+  ```yaml
+  datasets:
+  - path: mhenrichsen/alpaca_2k_test@sha1:d05c1cb585e462b16532a44314aa4859cb7450c6
+    name: /alpaca_2000.parquet
+    type: alpaca
+  ```
+These are the only changes that differs from a normal Axolotl configuration file. 
+
 ## 5 - Network policy
 
 While the network policy is part of the OS image, it is interesting to explore it further, as it is important for security and privacy. 
