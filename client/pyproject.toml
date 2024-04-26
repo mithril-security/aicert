@@ -6,7 +6,6 @@ authors = [
     "Mehdi BESSAA <mehdi.bessaa@mithrilsecurity.io>",
     "Lucas Bourtoule <lucas.bourtoule@mithrilsecurity.io>",
 ]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
