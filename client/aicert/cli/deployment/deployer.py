@@ -100,9 +100,11 @@ class Deployer:
         """
         cls.__assert_tf_available()
 
-        resource = cls.__run_subprocess("terraform", "state", "list","|", "grep", resource_type)
+        resource_list = cls.__run_subprocess(command=["terraform", "state", "list"], cwd=dir, string_flag=False)
+        resource = subprocess.run(["grep", resource_type], input=resource_list, capture_output=True, cwd=dir)
+        resource_name = resource.stdout.decode("utf-8")
 
-        args = ["terraform", "state", "rm", resource]
+        args = ["terraform", "state", "rm", resource_name]
 
         cls.__run_subprocess(args, cwd=dir)
 
@@ -113,6 +115,7 @@ class Deployer:
         cwd: Optional[Path] = None,
         verbose: bool = False,
         assert_returncode: bool = True,
+        string_flag = True,
     ) -> str:
         """Private method: run a command as a subprocess and return its stdout as a string
         
@@ -139,7 +142,7 @@ class Deployer:
                 cwd=str(cwd.absolute()),
                 stdin=sys.stdin,
                 capture_output=True,
-                text=True,
+                text=string_flag,
             )
         except KeyboardInterrupt:
             exit(1)
@@ -200,7 +203,7 @@ class Deployer:
         Args:
             dir (Path): Working directory
         """
-        cls.__tf_exclude("azurerm_storage_account")
-        cls.__tf_exclude("azurerm_storage_container")
+        cls.__tf_exclude("azurerm_storage_account", dir)
+        cls.__tf_exclude("azurerm_storage_container", dir)
         
         cls.__tf_destroy(dir)

@@ -180,7 +180,7 @@ class Client:
                 if os.path.isfile(file):
                     os.remove(file)
 
-            Deployer.destroy_runner()
+            Deployer.destroy_runner(self.__tf_home)
         
         self.__base_url = "http://localhost:80"
         self.__session.close()
@@ -274,7 +274,9 @@ class Client:
         token = { 'token': token.stdout }
 
         url_storage = self.__session.post(f"{self.__base_url}/storage-upload", data=json.dumps(token), headers={"Content-Type": "application/json"})
-        print(url_storage.content)
+        url = json.loads(url_storage.content)
+        
+        return url
 
 
 
@@ -407,7 +409,7 @@ class Client:
                     elif eventlog["event_type"]=="input_resource" and eventlog["content"]["spec"]["resource_proto"]["resource_type"]=="model":
                         typer.secho(f'Dataset: {eventlog["content"]["spec"]["resource_proto"]["repo"]} \n Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
                     elif eventlog["event_type"]=="timing":
-                        typer.secho(f'Time to train: {eventlog["content"]["finetune_time"]} \n ✅ Verified', fg=typer.colors.GREEN)
+                        typer.secho(f'Time to train: {eventlog["content"]["spec"]["finetune_time"]} \n ✅ Verified', fg=typer.colors.GREEN)
 
         elif pcr_index == PCR_FOR_CERTIFICATE:
             result = check_server_cert(

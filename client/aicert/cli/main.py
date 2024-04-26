@@ -34,7 +34,7 @@ def finetune(
         print("Submitting finetune request")
         res = client.submit_axolotl_config(dir, config)
         
-        client.submit_finetune()
+        url = client.submit_finetune()
 
         if not client.is_simulation:
             attestation = client.wait_for_attestation()
@@ -45,9 +45,11 @@ def finetune(
         
             # Verify attestation report
             client.verify_attestation(attestation, verbose=True)
+        
+        print(f'Outputs Link: {url["model link"]}')
 
         print("Destroying VM and server")
-        #client.disconnect()
+        client.disconnect()
 
 
 @app.command()

@@ -144,8 +144,8 @@ class EventLog:
             {
                 "event_type": "timing",
                 "content": {
-                    {"finetune_time": elapsed_time}
-                },
+                    "spec": {"finetune_time": elapsed_time},
+                }
             }
         )
 
