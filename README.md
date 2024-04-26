@@ -79,7 +79,7 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 
 
 ## Workflow:
-<img align="center" src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/aicert-axolotl.png?raw=true" alt="Workflow">
+<img align="center" src="https://github.com/mithril-security/aicert/blob/main/docs/assets/aicert-axolotl.png?raw=true" alt="Workflow">
 
 
 ## Prerequisites
