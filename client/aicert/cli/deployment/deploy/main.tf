@@ -151,4 +151,38 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     public_key = tls_private_key.example_ssh.public_key_openssh
   }
 
+
+  boot_diagnostics {
+    storage_account_uri = azurerm_storage_account.my_storage_account.primary_blob_endpoint
+  }
 }
+
+
+resource "azurerm_storage_account" "model_storage" {
+  name                     = var.storage_account
+  location                 = data.azurerm_resource_group.rg.location
+  resource_group_name      = data.azurerm_resource_group.rg.name
+  account_kind            = "StorageV2"
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+resource "azurerm_storage_container" "model_container" {
+  name                  = var.storage_container
+  storage_account_name  = azurerm_storage_account.model_storage.name
+  container_access_type = "private"
+}
+
+# resource "azurerm_role_assignment" "model_storage" {
+#   scope                = azurerm_storage_account.model_storage.id
+#   role_definition_name = "Storage Blob Data Contributor"
+#   principal_id         = data.azurerm_client_config.current.object_id
+# }
+# resource "azurerm_storage_blob" "model_blob" {
+#   name                   = "model_finetune.zip"
+#   storage_account_name   = azurerm_storage_account.model_storage.name
+#   storage_container_name = azurerm_storage_container.model_container.name
+#   type                   = "Block"
+#   source                 = "model_finetune.zip"
+# }
+

@@ -20,6 +20,7 @@ class AxolotlConfig:
     __modelhash: str = ""
     __datasetname: str = ""
     __datasethash: str = ""
+    __dataset_filename: str = "/alpaca_2000.parquet"
 
     model_resource : Resource
     dataset_resource : Resource
@@ -59,6 +60,9 @@ class AxolotlConfig:
         """
 
         cls.__datasetname, cls.__datasethash = cls.config['datasets'][0]['path'].split("@")
+        if cls.config['datasets'][0]['name']:
+            cls.__dataset_filename = cls.config['datasets'][0]['name']
+            cls.config['datasets'][0].pop('name')
         cls.__datasethash = cls.__datasethash.split(":")[1]
     
     @classmethod 
@@ -87,7 +91,7 @@ class AxolotlConfig:
             'resource_type' : "dataset",
             'repo' : "https://huggingface.co/datasets/" + cls.__datasetname,
             'hash' : cls.__datasethash,
-            'path' : "dataset/" + cls.__datasetname
+            'path' : "dataset/" + cls.__datasetname 
         }
 
         cls.resources = [cls.model_resource, cls.dataset_resource]
@@ -96,7 +100,7 @@ class AxolotlConfig:
         cls.resources = ResourceListAdapter.validate_python(cls.resources)
 
         cls.config['base_model'] = 'model/' + cls.__modelname
-        cls.config['datasets'][0]['path'] = 'dataset/' + cls.__datasetname
+        cls.config['datasets'][0]['path'] = 'dataset/' + cls.__datasetname + cls.__dataset_filename
 
     def set_filename(cls, filename: str) -> None:
         cls.filename = filename

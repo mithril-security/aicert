@@ -235,8 +235,8 @@ class Builder:
                 detach=True, 
             )
             
-            log_streamer = LogStreamer(workspace / "log_model_dataset.log")
-            log_streamer.write_stream(container_hash)
+            log_streamer_dataset = LogStreamer(workspace / "log_model_dataset.log")
+            log_streamer_dataset.write_stream(container_hash, False)
 
             resource_hash = cls.__docker_run(
                 cmd=CmdLine(["git", "rev-parse", "--verify", "HEAD"]),
@@ -321,8 +321,8 @@ class Builder:
             )
 
             # Log streamer registers the stdout for the docker into the log file log_axolotl.log
-            log_streamer_finetune = LogStreamer(workspace / "log_axolotl.log")
-            log_streamer_finetune.write_stream(container_hash)
+            log_streamer_finetune = LogStreamer(workspace / "log_model_dataset.log")
+            log_streamer_finetune.write_stream(container_hash, True)
 
         except HTTPException as e:
             cls.__exception = e
@@ -357,9 +357,13 @@ class Builder:
                     import time
                     start_time = time.time()
                     cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image, workspace=workspace)
+
+                print("AXOLOLT RUNNING ENDS HERE")
+
                     training_time = time.time() - start_time
                     cls.__event_log.finetune_timing(training_time)
                     
+
                 # Registering output and compression 
                 with zipfile.ZipFile(workspace / 'finetuned-model.zip','w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(workspace / "lora-out"):

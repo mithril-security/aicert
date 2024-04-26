@@ -8,6 +8,7 @@ strict: false
 
 datasets:
   - path: mhenrichsen/alpaca_2k_test@sha1:d05c1cb585e462b16532a44314aa4859cb7450c6
+    name: /alpaca_2000.parquet
     type: alpaca
 dataset_prepared_path:
 val_set_size: 0.05
@@ -34,7 +35,7 @@ wandb_log_model:
 
 gradient_accumulation_steps: 4
 micro_batch_size: 2
-num_epochs: 4
+num_epochs: 1
 optimizer: adamw_bnb_8bit
 lr_scheduler: cosine
 learning_rate: 0.0002

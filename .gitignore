@@ -207,3 +207,7 @@ deploy/tfplan
 
 workspace
 local
+
+client/aicert/cli/security_config/
+client/axolotl_yaml/attestation.json
+upload_config.sh
