@@ -50,7 +50,7 @@ AZ_REGION="your-region"
 GALLERY_NAME="your-gallery-name"
 ```
 
-The size of the Azure VM can be set in [variables.tf](../../../client/aicert/cli/deployment/deploy/variables.tf)
+The size of the Azure VM can be set in the file: variables.tf
 ```console
 variable "instance_type" {
   type        = string
