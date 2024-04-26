@@ -1,19 +1,6 @@
 version: "3.9"
 
 services:
-  #attestation-generator:
-  #  # 1. waits for caddy to be ready
-  #  # 2. generate attestation document
-  #  # 3. write the document in a directory share with caddy
-  #  image: attestation-generator
-  #  restart: "no"
-  #  volumes:
-  #    - static_attestation:/srv
-  #    - /root/application_disk_root_hash:/application_disk_root_hash
-  #  devices:
-  #    - /dev/tpmrm0:/dev/tpmrm0
-  #  networks:
-  #    - constrained-attestation-generator
 
   caddy:
     image: caddy
@@ -24,7 +11,6 @@ services:
       - "443:443/udp"
     volumes:
       - /var/Caddyfile:/etc/caddy/Caddyfile
-      #- static_attestation:/srv
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -37,7 +23,6 @@ services:
         # over all of them (which would happen with bind 0.0.0.0)  
         aliases:
           - caddy-in-constrained-attestation-generator-network
-      #constrained-app: {}
 
   app:
     image: aicert-server
@@ -57,14 +42,10 @@ services:
     networks:
       - internet-access
       - constrained-attestation-generator
-    #command: bash -c "
-    #    usermod -aG docker ${USER}
-    #  "
     
 volumes:
   caddy_data:
   caddy_config:
-  #static_attestation:
 
 
 networks:
@@ -82,9 +63,4 @@ networks:
   constrained-attestation-generator:
     driver: bridge
     internal: true
-
-  # Network with the app and caddy.
-  # No internet access
-  #constrained-app:
-  #  driver: bridge
-  #  internal: true
+    

@@ -39,24 +39,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-app.mount("/outputs", StaticFiles(directory=WORKSPACE), name="outputs")
 axolotl_config = AxolotlConfig()
-
-@app.get("/outputs")
-def list_outputs(pattern: str) -> FileList:
-    if Path(pattern).is_absolute():
-        raise HTTPException(
-            status_code=403, detail="Cannot list files outside of workdir"
-        )
-    return FileList(
-        pattern=pattern,
-        file_list=[
-            str(sub.relative_to(WORKSPACE))
-            for sub in WORKSPACE.glob(pattern)
-            if sub.is_file()
-        ],
-    )
-
 
 async def logGenerator():
     for line in tail("-f", WORKSPACE / "log_model_dataset.log", _iter=True):

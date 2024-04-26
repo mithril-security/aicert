@@ -28,7 +28,7 @@ def finetune(
         )
 
         # Creates a VM and connects to it using aTLS
-        print("Deploying VM and initializing server")
+        print("Deploying VM and initializing server. This may take a few minutes.")
         client.connect()
 
         print("Submitting finetune request")
@@ -46,9 +46,7 @@ def finetune(
         # Verify attestation report
         client.verify_attestation(attestation, verbose=True)
 
-        print("Sample Output Link: https://www.example.com")
-
-        print("Destroying VM")
+        print("Destroying VM and server")
         #client.disconnect()
 
 

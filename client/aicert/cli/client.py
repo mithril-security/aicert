@@ -204,7 +204,7 @@ class Client:
         ca_cert = attestation_json["ca_cert"]
 
         # Verify quote and CA TLS certificate
-        self.verify_attestation(attestation.content, PCR_FOR_CERTIFICATE, True, ca_cert)
+        self.verify_attestation(attestation.content, PCR_FOR_CERTIFICATE, False, ca_cert)
         return ca_cert
 
 
@@ -373,6 +373,8 @@ class Client:
                 # Disconnect destroys the runner, this might not be required for an attestation failure
                 self.disconnect()
                 raise AICertInvalidAttestationException(f"❌ Attestation validation failed.")   
+            else:
+                print("Successfully verified server certificate")
 
 
 def raise_for_status(res: requests.Response, message: str) -> None:
