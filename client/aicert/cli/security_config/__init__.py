@@ -24,4 +24,10 @@ azure_measurements = {
 EXPECTED_OS_MEASUREMENTS = {
     "SIMULATION_QEMU": qemu_measurements,
     "AZURE_TRUSTED_LAUNCH": azure_measurements,
-}   
+}
+
+CONTAINER_MEASUREMENTS = json.loads(
+            importlib.resources.files(__package__)  # type: ignore
+            .joinpath("container_measurements.json")
+            .read_text()
+        )

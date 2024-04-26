@@ -110,15 +110,6 @@ resource "random_id" "random_id" {
   byte_length = 8
 }
 
-# Create storage account for boot diagnostics
-resource "azurerm_storage_account" "my_storage_account" {
-  name                     = "diag${random_id.random_id.hex}"
-  location                 = data.azurerm_resource_group.rg.location
-  resource_group_name      = data.azurerm_resource_group.rg.name
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
 # Create (and display) an SSH key
 resource "tls_private_key" "example_ssh" {
   algorithm = "RSA"
@@ -160,6 +151,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     public_key = tls_private_key.example_ssh.public_key_openssh
   }
 
+
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.my_storage_account.primary_blob_endpoint
   }
@@ -193,3 +185,4 @@ resource "azurerm_storage_container" "model_container" {
 #   type                   = "Block"
 #   source                 = "model_finetune.zip"
 # }
+

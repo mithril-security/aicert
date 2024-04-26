@@ -78,12 +78,16 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 + **Azure support**
 
 
+## Workflow:
+<img align="center" src="https://github.com/mithril-security/aicert/blob/main/docs/assets/aicert-axolotl.png?raw=true" alt="Workflow">
+
+
 ## Prerequisites
 To run this example, you will need acess to an Azure subscription with quota for VMs with GPUs.
 Install terraform and az cli. The client code requires python 3.11 or later.
-```bash
+```console
 # qemu-utils to resize disk to conform to azure disk specifications
-sudo apt-get update && sudo apt-get install qemu-utils tpm2-tools pesign
+sudo apt-get update && sudo apt-get install qemu-utils tpm2-tools pesign jq
 # Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 # azcopy to copy disk to azure 
@@ -100,39 +104,18 @@ sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/downloa
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
-## 1 - Preparing the image
-AIcert finetunes models inside Mithril OS enclaves.
-The OS image packages the server, reverse proxy and axolotl container images within it.
+## 1 - Configuration
+We must first configure the Azure region and resource names before we begin creating the Mithril OS image.
 
-To make subsequent finetunes easier, the OS disk only needs to be built once and uploaded to Azure.
-
-The "create_MithrilOS.sh" script creates the disk, uploads it to Azure, and converts it into an OS image. It also generates the OS measurements.
-```bash
-# log in to Azure CLI
-az login
-
-# Create OS image
-sudo ./create_MithrilOS.sh
-```
-
-## 2 - Install the client
-```bash
-cd client
-# If your default python is below python3.10
-poetry env use python3.11
-poetry shell
-poetry install
-```
-
-## 3 - Configuration
-The resource group name and region can be set in the [upload_config.sh](upload_config.sh)
-```bash
+The resource group name, gallery name and region can be set in the [upload_config.sh](upload_config.sh)
+```console
 AZ_RESOURCE_GROUP="your-resource-group"
 AZ_REGION="your-region"
+GALLERY_NAME="your-gallery-name"
 ```
 
 The size of the Azure VM can be set in [variables.tf](client/aicert/cli/deployment/deploy/variables.tf)
-```bash
+```console
 variable "instance_type" {
   type        = string
   default     = "Standard_NC24ads_A100_v4"
@@ -141,18 +124,61 @@ variable "instance_type" {
 ```
 The default size is Standard_NC24ads_A100_v4
 
+## 2 - Preparing the image
+AIcert finetunes models inside Mithril OS enclaves.
+The OS image packages the server, reverse proxy and axolotl container images within it.
+
+To make subsequent finetunes easier, the OS disk only needs to be built once and uploaded to Azure.
+
+The "create_MithrilOS.sh" script creates the disk, uploads it to Azure, and converts it into an OS image. It also generates the OS measurements.
+```console
+# log in to Azure CLI
+az login
+
+# Create OS image
+sudo ./create_MithrilOS.sh
+```
+
+## 3 - Install the client
+```console
+cd client
+# If your default python is below python3.10
+poetry env use python3.11
+poetry shell
+poetry install
+```
+
 ## 4 - Finetune a model
 AIcert pefroms the following functions when the finetune command is run:
 - Creates a VM with the Mithril OS image
 - Connects to the server VM using aTLS
 - Sends the axolotl configuration in the aicert.yaml
 - Waits for the finetuned model and attestation report to be returned
-```bash
+```console
 cd axolotl_yaml
 # There is a sample axolotl configuration present in this folder named aicert.yaml
 # This specifies the model, dataset, and training parameters
 aicert finetune
 ```
+
+### 4.1 - Changes to the Axolotl configuration file
+When Axolotl runs the fine-tuning, the container has no connection to the outside and can not pull other models that those gathered at the initialization part. 
+Pining the model and dataset makes it possible to verify the versionning and track exactly which dataset and model were used on the procedure. 
+Some changes must be taken into account when supplying an Axolotl configuration yaml. 
+
+- The model name that is specified must be pinned to a specific version :
+  ```yaml
+  # example:
+  base_model: TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T@sha1:036fa4651240b9a1487f709833b9e4b96b4c1574
+  ``` 
+- The dataset name must also be pinned to a specific version and the relative path to the data must also be specified in name (This is due to Axolotl not being able to pull a dataset locally).
+  ```yaml
+  datasets:
+  - path: mhenrichsen/alpaca_2k_test@sha1:d05c1cb585e462b16532a44314aa4859cb7450c6
+    name: /alpaca_2000.parquet
+    type: alpaca
+  ```
+These are the only changes that differs from a normal Axolotl configuration file. 
 
 ## 5 - Network policy
 

@@ -29,11 +29,7 @@ Packages=linux-image-cloud-amd64
          apparmor
          apparmor-utils
          iptables-persistent
-
-         # requirements needed for measured_setup service {
-         cryptsetup-bin
-         python3
-         # }         
+        
          # Note: when testing you might want to disable nvidia driver to speed up the build
         {% if nvidiaDriver %}
          nvidia-driver

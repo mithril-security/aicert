@@ -354,8 +354,16 @@ class Builder:
                     logger.info(cls.__docker_output_stream)
 
                 if cls.__finetune_framework == "axolotl":
+                    import time
+                    start_time = time.time()
                     cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image, workspace=workspace)
+
                 print("AXOLOLT RUNNING ENDS HERE")
+
+                    training_time = time.time() - start_time
+                    cls.__event_log.finetune_timing(training_time)
+                    
+
                 # Registering output and compression 
                 with zipfile.ZipFile(workspace / 'finetuned-model.zip','w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(workspace / "lora-out"):

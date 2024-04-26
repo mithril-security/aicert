@@ -89,6 +89,22 @@ class Deployer:
             args += ["--var", f"{k}={v}"]
 
         cls.__run_subprocess(args, cwd=dir)
+    
+    @classmethod
+    def __tf_exclude(cls, resource_type: str, dir: str, vars: dict = {}) -> None:
+        """Private method: run terraform state rm to exlude resource from plan
+        
+        Args:
+            dir (Path): Working directory
+            vars (dict): Values for the terraform variables as a dict
+        """
+        cls.__assert_tf_available()
+
+        resource = cls.__run_subprocess("terraform", "state", "list","|", "grep", resource_type)
+
+        args = ["terraform", "state", "rm", resource]
+
+        cls.__run_subprocess(args, cwd=dir)
 
     @classmethod
     def __run_subprocess(
@@ -184,4 +200,7 @@ class Deployer:
         Args:
             dir (Path): Working directory
         """
+        cls.__tf_exclude("azurerm_storage_account")
+        cls.__tf_exclude("azurerm_storage_container")
+        
         cls.__tf_destroy(dir)

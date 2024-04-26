@@ -53,3 +53,8 @@ golden_measurements_qemu = {
 
 with open("client/aicert/cli/security_config/measurements_qemu.json", 'w') as json_file:
     json.dump(golden_measurements_qemu, json_file, indent=4)
+
+with open("client/aicert/cli/security_config/container_measurements.json", 'w') as json_file:
+    file = open("local/container_ids.json")
+    container_ids = json.load(file)
+    json.dump(container_ids, json_file, indent=4)

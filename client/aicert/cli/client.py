@@ -209,7 +209,7 @@ class Client:
         ca_cert = attestation_json["ca_cert"]
 
         # Verify quote and CA TLS certificate
-        self.verify_attestation(attestation.content, PCR_FOR_CERTIFICATE, True, ca_cert)
+        self.verify_attestation(attestation.content, PCR_FOR_CERTIFICATE, False, ca_cert)
         return ca_cert
 
 
@@ -398,7 +398,18 @@ class Client:
                 typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
                 print(yaml.safe_dump(event_log))
                 typer.secho(f"✨✨✨ ALL CHECKS PASSED", fg=typer.colors.GREEN)
-
+                for eventlog in build_response["event_log"]:
+                    eventlog=json.loads(eventlog)
+                    if eventlog["event_type"]=="axolotl_configuration":
+                        typer.secho(f'Axolotl config Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
+                    elif eventlog["event_type"]=="input_image" and eventlog["content"]["spec"]["image_name"]=="@local/axolotl:latest":
+                        typer.secho(f'Axolotl image: {eventlog["content"]["spec"]["image_name"]} \n Hash: {eventlog["content"]["resolved"]["id"]} \n ✅ Verified', fg=typer.colors.GREEN)
+                    elif eventlog["event_type"]=="input_resource" and eventlog["content"]["spec"]["resource_proto"]["resource_type"]=="dataset":
+                        typer.secho(f'Dataset: {eventlog["content"]["spec"]["resource_proto"]["repo"]} \n Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
+                    elif eventlog["event_type"]=="input_resource" and eventlog["content"]["spec"]["resource_proto"]["resource_type"]=="model":
+                        typer.secho(f'Dataset: {eventlog["content"]["spec"]["resource_proto"]["repo"]} \n Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
+                    elif event_log["event_type"]=="timing":
+                        typer.secho(f'Time to train: {eventlog["content"]["finetune_time"]} \n ✅ Verified', fg=typer.colors.GREEN)
 
         elif pcr_index == PCR_FOR_CERTIFICATE:
             result = check_server_cert(
@@ -409,6 +420,8 @@ class Client:
                 # Disconnect destroys the runner, this might not be required for an attestation failure
                 self.disconnect()
                 raise AICertInvalidAttestationException(f"❌ Attestation validation failed.")   
+            else:
+                print("Successfully verified server certificate")
 
 
 def raise_for_status(res: requests.Response, message: str) -> None:
