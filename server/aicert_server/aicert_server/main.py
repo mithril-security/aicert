@@ -23,16 +23,18 @@ import yaml
 import logging
 from sh import tail
 import time
-from sse_starlette.sse import EventSourceResponse
 import json
 import asyncio
 import subprocess
 import select
+from pydantic import BaseModel
 
 from aicert_common.protocol import FileList, AxolotlConfigString
 from aicert_server.config_parser import AxolotlConfig
 from aicert_server.builder import Builder, SIMULATION_MODE
 from aicert_server.tpm import tpm_extend_pcr, tpm_read_pcr
+from aicert_server.deploy_storage import *
+
 
 PCR_FOR_CERTIFICATE = 15
 WORKSPACE = Path("/workspace")
@@ -84,10 +86,26 @@ async def build_status():
 def start_finetune() -> None:
     Builder.start_finetune(WORKSPACE, axolotl_config)
 
-# TODO: Implementation needed
-@app.post("/finetune/status", status_code=200)
-def finetune_status() -> None:
-    pass
+
+class SASToken(BaseModel):
+    token: str
+
+@app.post("/storage-upload")
+async def storage_upload(sastoken: SASToken):
+    print("token is ")
+    print(sastoken.token)
+    if len(sastoken.token) <= 0:
+        raise HTTPException(
+            status_code=403, detail="SAS Token Invalid or incorrect."
+        )
+    token = sastoken.token
+    url_token = "https://aicertstorage.blob.core.windows.net/aicertcontainer/finetuned-model.zip?"+token
+    model_uploader = ModelUploader(url_token, WORKSPACE / "finetuned-model.zip")
+    model_uploader.upload_model()
+
+    return JSONResponse(content={"model link": model_uploader.get_link()}, status_code=202)
+    # return model_uploader.get_link()
+
 
 
 @app.get("/attestation")

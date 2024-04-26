@@ -21,3 +21,15 @@ variable "gallery_name" {
   default     = "aicert-gallery"
   description = "Name of the Image Gallery."
 }
+
+variable "storage_account" {
+  type        = string
+  default     = "aicertstorage"
+  description = "Storage account name."
+}
+
+variable "storage_container" {
+  type        = string
+  default     = "aicertcontainer"
+  description = "Storage account container name."
+}

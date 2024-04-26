@@ -355,7 +355,7 @@ class Builder:
 
                 if cls.__finetune_framework == "axolotl":
                     cls.__axolotl_run(axolotl_config=axolotl_config, axolotl_image=finetune_image, workspace=workspace)
-
+                print("AXOLOLT RUNNING ENDS HERE")
                 # Registering output and compression 
                 with zipfile.ZipFile(workspace / 'finetuned-model.zip','w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(workspace / "lora-out"):

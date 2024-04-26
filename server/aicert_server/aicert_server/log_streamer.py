@@ -30,7 +30,7 @@ class LogStreamer:
         for log in container.logs(stdout=True, stderr=False, stream=True):
             self.logger.info(f"{log}")
         if last_stream:
-            self.logger.info(f"EOF")
+            self.logger.info(f"[EOF]")
         self.logger.removeHandler(self.filehandler)
         self.filehandler.close()
 
