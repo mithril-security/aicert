@@ -43,8 +43,8 @@ def finetune(
             with (dir / "attestation.json").open("wb") as f:
                 f.write(attestation)
         
-        # Verify attestation report
-        # client.verify_attestation(attestation, verbose=True)
+            # Verify attestation report
+            client.verify_attestation(attestation, verbose=True)
 
         print("Destroying VM and server")
         #client.disconnect()

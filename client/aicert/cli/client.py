@@ -406,7 +406,7 @@ class Client:
                         typer.secho(f'Dataset: {eventlog["content"]["spec"]["resource_proto"]["repo"]} \n Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
                     elif eventlog["event_type"]=="input_resource" and eventlog["content"]["spec"]["resource_proto"]["resource_type"]=="model":
                         typer.secho(f'Dataset: {eventlog["content"]["spec"]["resource_proto"]["repo"]} \n Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
-                    elif event_log["event_type"]=="timing":
+                    elif eventlog["event_type"]=="timing":
                         typer.secho(f'Time to train: {eventlog["content"]["finetune_time"]} \n ✅ Verified', fg=typer.colors.GREEN)
 
         elif pcr_index == PCR_FOR_CERTIFICATE:
