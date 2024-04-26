@@ -14,8 +14,6 @@ import warnings
 import json
 import subprocess
 from datetime import datetime, timedelta
-from azure.storage.blob import BlobClient, generate_blob_sas, BlobSasPermissions
-
 
 from aicert_common.protocol import ConfigFile, FileList, AxolotlConfigString
 from aicert_common.logging import log
