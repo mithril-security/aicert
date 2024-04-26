@@ -195,7 +195,7 @@ def check_os_pcrs(attestation_doc, simulation_mode):
                 raise AttestationError(
                     f"Wrong PCR value for PCR[{index}], "
                     f"expected {expected_pcr_value}, "
-                    f"got {attestation_doc["pcrs"]["sha256"][index]} instead"
+                    f'got {attestation_doc["pcrs"]["sha256"][index]} instead'
                 )
 
 

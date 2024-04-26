@@ -1,16 +1,21 @@
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
-import json
 from pathlib import Path
 import pkgutil
 import requests
 import tempfile
 from time import sleep
 import typer
+from rich import print
 from typing import Optional
 import urllib.parse
 import yaml
 import warnings
+import json
+import subprocess
+from datetime import datetime, timedelta
+from azure.storage.blob import BlobClient, generate_blob_sas, BlobSasPermissions
+
 
 from aicert_common.protocol import ConfigFile, FileList, AxolotlConfigString
 from aicert_common.logging import log
@@ -232,8 +237,7 @@ class Client:
              "Failed sending axolotl configuration to server",
          )
         return res    
-
-
+    
     def submit_finetune(self) -> None:
         """Send a request to begin finetuning a model
         """
@@ -243,6 +247,38 @@ class Client:
              ),
              "Failed sending finetune request to server",
          )    
+        sleep(2)
+        # adding time delta for the finetuning
+
+        with self.__session.get(f"{self.__base_url}/build/status", stream=True) as stream_resp:
+            event_data = ""
+            for line in stream_resp.iter_lines():
+                if line != b'':
+                    event_data = line.decode("utf-8")
+                    if "[EOF]" in event_data:
+                        break
+                    event_data = event_data[92:]
+                    if len(event_data) >= 10:
+                        event_data = event_data[:-10]
+                    print(event_data.replace("\\", ""))
+        # sleep(500)
+        ## Upload to storage account 
+        account_name = 'aicertstorage'
+        container_name = 'aicertcontainer'
+        # ps = subprocess.Popen(('az', 'storage', 'account', 'keys', 'list', '-g', 'aicert-fli', '-n', account_name), stdout=subprocess.PIPE)
+        # account_key = subprocess.check_output(('jq', '.[1].value'), stdin=ps.stdout)
+        # account_key = account_key.decode('utf-8')
+        # account_key = json.loads(account_key)
+        # print(account_key)
+        expiry = datetime.now() + timedelta(hours=1)
+        expiry = expiry.strftime("%Y-%m-%dT%H:%MZ")
+        token = subprocess.run(['az', 'storage', 'container', 'generate-sas', '-n', container_name, '--https-only', '--permissions', 'dlrw', '--expiry', expiry, '-o', 'tsv', '--account-name', account_name], capture_output=True, text=True)
+        token = { 'token': token.stdout }
+
+        url_storage = self.__session.post(f"{self.__base_url}/storage-upload", data=json.dumps(token), headers={"Content-Type": "application/json"})
+        print(url_storage.content)
+
+
 
     
     def wait_for_attestation(self) -> bytes:

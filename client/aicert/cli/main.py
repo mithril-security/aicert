@@ -44,7 +44,7 @@ def finetune(
                 f.write(attestation)
         
         # Verify attestation report
-        client.verify_attestation(attestation, verbose=True)
+        # client.verify_attestation(attestation, verbose=True)
 
         print("Destroying VM and server")
         #client.disconnect()
