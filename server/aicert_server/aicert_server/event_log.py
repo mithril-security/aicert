@@ -134,6 +134,21 @@ class EventLog:
             }
         )
 
+    def finetune_timing(self, elapsed_time: float) -> None:
+        """Adds the time taken to finetune to the event log
+        
+        Args:
+            elapsed_time: time taken to complete the finetuning
+        """
+        self.__append(
+            {
+                "event_type": "timing",
+                "content": {
+                    {"finetune_time": elapsed_time}
+                },
+            }
+        )
+
     #def finetune(self, axolotl_config_filename, axolotl_config_hash, finetuning_image, image_hash) -> None:
     #    """Add a finetune event to the event log
     #    """
