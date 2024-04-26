@@ -1,0 +1,22 @@
+*filter
+# Allow localhost connections to permit communication between k3s components
+-A INPUT -p tcp -s localhost -d localhost -j ACCEPT
+-A OUTPUT -p tcp -s localhost -d localhost -j ACCEPT
+# Allow connection to Azure IMDS to get the VM Instance userdata
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A OUTPUT -p tcp -d 169.254.169.254 --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -d 168.63.129.16 --dport 80 -j ACCEPT
+# DNS over UDP
+-A INPUT -p udp --sport 53 -j ACCEPT
+-A INPUT -p udp --dport 53 -j ACCEPT
+-A OUTPUT -p udp --sport 53 -j ACCEPT
+-A OUTPUT -p udp --dport 53 -j ACCEPT
+# DNS over TCP
+-A INPUT -p tcp --sport 53 -j ACCEPT
+-A INPUT -p tcp --dport 53 -j ACCEPT
+-A OUTPUT -p tcp --sport 53 -j ACCEPT
+-A OUTPUT -p tcp --dport 53 -j ACCEPT
+# Drop all other traffic
+-A OUTPUT -j DROP
+-A INPUT -j DROP
+COMMIT

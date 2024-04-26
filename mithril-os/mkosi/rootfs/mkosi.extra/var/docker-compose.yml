@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+
+  caddy:
+    image: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - /var/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      internet-access: {}
+      constrained-attestation-generator:
+        # The caddy service has multiple networks interfaces
+        # We create a network alias to have a way to 
+        # refer to the service exposed on the constrainted-attestation-generator network.
+        # This is needed to expose the caddy admin endpoint only over this interface and not
+        # over all of them (which would happen with bind 0.0.0.0)  
+        aliases:
+          - caddy-in-constrained-attestation-generator-network
+
+  app:
+    image: aicert-server
+    restart: unless-stopped
+    volumes:
+      - /workspace:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    devices:
+      - /dev/tpmrm0:/dev/tpmrm0
+    deploy:
+      resources:
+        reservations:
+          devices:          
+          - driver: "nvidia"
+            count: all
+            capabilities: [gpu]
+    networks:
+      - internet-access
+      - constrained-attestation-generator
+    
+volumes:
+  caddy_data:
+  caddy_config:
+
+
+networks:
+  # The network config is a bit complicated because we want to :
+  # * remove internet access (inbound and outbound) from every container except for the reverse proxy
+  # * allow access to the caddy admin endpoint only to the attestation-generator (and not to the app) 
+  
+  # internet access has not the "internal: true" attribute so it will be exposed to the internet
+  # only caddy is in this network
+  internet-access:
+    driver: bridge
+
+  # Network with the attestation-generator and caddy.
+  # No internet access
+  constrained-attestation-generator:
+    driver: bridge
+    internal: true
+    

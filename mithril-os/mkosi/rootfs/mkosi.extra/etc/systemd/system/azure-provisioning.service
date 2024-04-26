@@ -1,0 +1,12 @@
+[Unit]
+Description=Azure Provisioning
+Wants=network-online.target
+After=launch-aicert-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/azure-provisioning.py
+ExecStart=/usr/bin/systemctl disable azure-provisioning.service
+
+[Install]
+WantedBy=multi-user.target

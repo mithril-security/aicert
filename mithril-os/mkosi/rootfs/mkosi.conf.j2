@@ -1,0 +1,65 @@
+[Distribution]
+Distribution=debian
+Release=bookworm
+Architecture=x86-64
+# We need to add additionnal repositories for nvidia and cuda drivers
+Repositories=contrib,non-free,non-free-firmware
+
+[Content]
+Bootable=yes
+Bootloader=uki
+
+{% if debug %}
+RootPassword=root
+{% endif %}
+
+Packages=linux-image-cloud-amd64
+         systemd
+         systemd-boot
+         systemd-sysv
+         systemd-resolved
+         udev
+         dbus
+         tzdata
+         tpm2-tools
+         firmware-misc-nonfree
+         firmware-linux
+         linux-headers-cloud-amd64
+         #Added for hardening
+         apparmor
+         apparmor-utils
+         iptables-persistent
+        
+         # Note: when testing you might want to disable nvidia driver to speed up the build
+        {% if nvidiaDriver %}
+         nvidia-driver
+         nvidia-smi
+         nvidia-container-toolkit
+         cuda-drivers
+        {% endif %}
+
+        {% if debug %}
+         ca-certificates
+         vim
+         nano
+        {% endif %}
+
+         # docker
+         docker-ce
+         docker-ce-cli
+         containerd.io
+         docker-compose-plugin
+
+Initrds=../initrd/image
+KernelCommandLine= {% if debug %} console=ttyS0 {% endif %} systemd.volatile=overlay
+#  rd.systemd.unit=emergency.target  
+
+[Validation]
+# Generate a SHA256SUMS file of all generated artifacts after the build is complete.
+# Unused for now
+Checksum=yes
+
+
+[Output]
+Format = disk
+ManifestFormat = json

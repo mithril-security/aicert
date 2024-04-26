@@ -5,15 +5,15 @@ import subprocess
 import tempfile
 import OpenSSL
 from OpenSSL import crypto
-import requests
 import yaml
-from .logging import log
+import pkgutil
+from aicert_common.logging import log
 
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 
-
+PCR_FOR_CERTIFICATE = 15
 PCR_FOR_MEASUREMENT = 16
 
 
@@ -46,13 +46,12 @@ def verify_ak_cert(cert_chain: list[bytes]) -> bytes:
     store = crypto.X509Store()
 
     # Create the CA cert object from PEM string, and store into X509Store
-    req = requests.get("http://crl.microsoft.com/pkiinfra/certs/AMERoot_ameroot.crt")
-    req.raise_for_status()
-    _rootca_cert = crypto.load_certificate(crypto.FILETYPE_ASN1, req.content)  # type: ignore
+    root_cert = pkgutil.get_data(__name__,"Azure Virtual TPM Root Certificate Authority 2023.crt")
+    _rootca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, root_cert)  # type: ignore
     store.add_cert(_rootca_cert)
 
     chain = [
-        crypto.load_certificate(crypto.FILETYPE_ASN1, _cert_der)
+        crypto.load_certificate(crypto.FILETYPE_PEM, _cert_der)
         for _cert_der in cert_chain[1:-1]
     ]
 
@@ -69,10 +68,6 @@ def verify_ak_cert(cert_chain: list[bytes]) -> bytes:
         ref_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1,cert_chain[2])
         log.info(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ref_cert).decode('ascii'))
         log.error("Invalid AK certificate")
-        # TODO: In the future we'll want to raise an error
-        # But for now Azure vTPM does not have an official certificate chain
-        # So the checks can randomly fail
-        # raise AttestationError("Invalid AK certificate")
 
     return cert_chain[0]
 
@@ -125,11 +120,33 @@ def check_quote(quote, pub_key_pem):
         return att_document
 
 
+def check_server_cert(
+    received_cert,
+    pcr_end,
+    initial_pcr="0000000000000000000000000000000000000000000000000000000000000000",
+):
+    initial_pcr = bytes.fromhex(initial_pcr)
+    current_pcr = initial_pcr
+
+    hash_event = hashlib.sha256(received_cert.encode()).digest()
+    current_pcr = hashlib.sha256(current_pcr + hash_event).digest()
+
+    log.info(f"PCR in quote : {pcr_end}")
+    log.info(f"Expected PCR : {current_pcr.hex()}")
+    # Both PCR MUST match, else something sketchy is going on!
+    if pcr_end != current_pcr.hex():
+        return False
+    
+    return True
+
+
 def check_event_log(
     input_event_log,
     pcr_end,
     initial_pcr="0000000000000000000000000000000000000000000000000000000000000000",
 ):
+    from .security_config import CONTAINER_MEASUREMENTS
+
     # Starting from the expected initial PCR state
     # We replay the event extending the PCR
     # At the end we get the expected PCR value
@@ -139,15 +156,49 @@ def check_event_log(
         hash_event = hashlib.sha256(e.encode()).digest()
         current_pcr = hashlib.sha256(current_pcr + hash_event).digest()
 
-    log.info(f"PCR in quote : {pcr_end}")
-    log.info(f"Expected PCR based on event log and initial PCR {current_pcr.hex()}")
     # Both PCR MUST match, else something sketchy is going on!
-    assert pcr_end == current_pcr.hex()
+    if not pcr_end == current_pcr.hex():
+        raise AttestationError(f"Event log does not match attestation report",)
+
+    # Check ids of containers used
+    for e in input_event_log:
+        e = json.loads(e)
+        if e["event_type"]=="input_image":
+            if e["content"]["spec"]["image_name"] not in CONTAINER_MEASUREMENTS:
+                raise AttestationError(f"Unexpected container image present in event log [{e["content"]["spec"]["image_name"]}], ",)
+            if e["content"]["resolved"]["id"] != CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]:
+                raise AttestationError(
+                    f"Wrong image id for image [{e["content"]["spec"]["image_name"]}], "
+                    f"expected {CONTAINER_MEASUREMENTS[e["content"]["spec"]["image_name"]]}, "
+                    f"got {e["content"]["resolved"]["id"]} instead"
+                )
+            
+
+
 
     # Now we can return the parsed event log
     event_log = [json.loads(e) for e in input_event_log]
 
     return event_log
+
+
+def check_os_pcrs(attestation_doc, simulation_mode):
+    from .security_config import EXPECTED_OS_MEASUREMENTS
+    os_measurements = EXPECTED_OS_MEASUREMENTS["SIMULATION_QEMU"] if simulation_mode else EXPECTED_OS_MEASUREMENTS["AZURE_TRUSTED_LAUNCH"]
+
+    for (
+            index,
+            expected_pcr_value,
+        ) in os_measurements.items():
+            if index not in attestation_doc["pcrs"]["sha256"]:
+                raise AttestationError((f"Quote is missing PCR[{index}], ",))
+
+            if attestation_doc["pcrs"]["sha256"][index] != expected_pcr_value:
+                raise AttestationError(
+                    f"Wrong PCR value for PCR[{index}], "
+                    f"expected {expected_pcr_value}, "
+                    f"got {attestation_doc["pcrs"]["sha256"][index]} instead"
+                )
 
 
 def decode_b64_encoding(x):

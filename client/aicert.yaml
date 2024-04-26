@@ -1,0 +1,21 @@
+version: 0.1.0
+build:
+  image: "debian:bullseye"
+  cmdline: |
+    /bin/sh -c 'apt update && apt install -y build-essential && gcc -o helloworld ./src/main.c'
+  inputs:
+    - resource_type: git
+      repo: "https://github.com/mithril-security/sample-repo.git"
+      branch: main
+      path: src
+      dependencies: none
+  outputs: helloworld
+  framework: {"framework":"default"}
+runner:
+  daemon: "http://127.0.0.1:8082"
+  platform: "azure-tpm"
+  instance_type: "Standard_DS1_v2"
+serve:
+  cmdline: "echo 'lala'"
+  host_port: 8080
+  container_port: 8085

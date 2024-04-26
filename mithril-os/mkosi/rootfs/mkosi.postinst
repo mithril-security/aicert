@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "Removing Systemd GPT auto generator"
+rm $BUILDROOT/usr/lib/systemd/system-generators/systemd-gpt-auto-generator
+
