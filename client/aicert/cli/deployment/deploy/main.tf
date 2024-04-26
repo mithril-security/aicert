@@ -100,16 +100,6 @@ resource "azurerm_network_interface_security_group_association" "example" {
   network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
 }
 
-# Generate random text for a unique storage account name
-resource "random_id" "random_id" {
-  keepers = {
-    # Generate a new ID only when a new resource group is defined
-    resource_group = data.azurerm_resource_group.rg.name
-  }
-
-  byte_length = 8
-}
-
 # Create (and display) an SSH key
 resource "tls_private_key" "example_ssh" {
   algorithm = "RSA"
