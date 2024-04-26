@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import load_der_x509_certificate
 
 PCR_FOR_CERTIFICATE = 15
-PCR_FOR_MEASUREMENT = 16
+PCR_FOR_MEASUREMENT = 14
 
 
 class AttestationError(Exception):

@@ -11,7 +11,7 @@ import subprocess
 from typing import List, Dict, Any
 
 
-PCR_FOR_MEASUREMENT = 16
+PCR_FOR_MEASUREMENT = 14
 
 
 def sha256_file(file_path: str) -> str:

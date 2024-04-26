@@ -33,10 +33,10 @@ When the AI builder launches the `aicert` CLI command. Under the hood, AICert wi
 
 + Provision a VM with the correct hardware/software stack, PCR registers 0-13 will be updated at boot time
 + Hash server certificate and register them to PCR15
-+ Hash input values and register them to PCR16
++ Hash input values and register them to PCR14
 + Build a container with all the necessary inputs
 + Execute axolotl fintuning
-+ Hash outputs and register them to PCR16
++ Hash outputs and register them to PCR14
 + Request a signed quote from the Cloud provider containing all PCR values
 + Standardize quote details and return AI certificate to the end user
 

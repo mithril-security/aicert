@@ -46,11 +46,11 @@ At the boot stage, the stack is loaded piece by piece, starting with the UEFI. T
 
 #### Inputs
 
-We then download the base model and any resources as specified in the AICert config file. These inputs are hashed and stored in PCR16.
+We then download the base model and any resources as specified in the AICert config file. These inputs are hashed and stored in PCR14.
 
 #### Outputs
 
-After performing training, we hash the outputs and store these hashes in PCR16.
+After performing training, we hash the outputs and store these hashes in PCR14.
 
 ![PCR-values](../../assets/PCR-values.png)
 
@@ -62,4 +62,4 @@ AICert will then request a “quote”, containing all these measurements, which
 
 When end users use the `verify()` method provided in our AICert Python library, AICert will check the values of each PCR in our AICert proof file against known values. This allows us to verify the full software stack used by AICert.
 
-However, the hashes in PCR15 and PCR16 are not known values to AICert, so end users should verify these manually by comparing the values in our AICert proof file against known SHA256 (for GitHub commits) or SHA1 hashes (for other input files) for the input data.
+However, the hashes in PCR15 and PCR14 are not known values to AICert, so end users should verify these manually by comparing the values in our AICert proof file against known SHA256 (for GitHub commits) or SHA1 hashes (for other input files) for the input data.
