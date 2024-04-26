@@ -10,7 +10,7 @@ To get started, we will walk you through the steps needed to configure and launc
 The end-user can then use our **Python client SDK** to verify that the AICert proof file is genuine and check the inputs used (pre-trained model, dataset, and code) to produce our model.
 
 ## Fix this link to correct repo
-> All the files shown in this example are available [on Github](https://github.com/mithril-security/AICert-example).
+> All the files shown in this example are available [on Github](https://github.com/mithril-security/aicert).
 
 **The workflow is as follows:**
 

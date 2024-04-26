@@ -78,6 +78,10 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 + **Azure support**
 
 
+## Workflow:
+<img align="center" src="https://github.com/mithril-security/aicert/blob/readme/docs/assets/aicert-axolotl.png?raw=true" alt="Workflow">
+
+
 ## Prerequisites
 To run this example, you will need acess to an Azure subscription with quota for VMs with GPUs.
 Install terraform and az cli. The client code requires python 3.11 or later.

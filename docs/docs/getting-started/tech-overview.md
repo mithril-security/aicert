@@ -26,7 +26,8 @@ ________________________________________________________
 ![under-the-hood-dark](../../assets/under-the-hood-dark.png#only-dark)
 ![under-the-hood-light](../../assets/under-the-hood-light.png#only-light)
 </br>
-
+![workflow](../../assets/aicert-axolotl.png)
+</br>
 
 When the AI builder launches the `aicert` CLI command. Under the hood, AICert will:
 
