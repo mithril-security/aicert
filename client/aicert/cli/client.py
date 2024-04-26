@@ -248,6 +248,7 @@ class Client:
              "Failed sending finetune request to server",
          )    
         sleep(2)
+        # adding time delta for the finetuning
 
         with self.__session.get(f"{self.__base_url}/build/status", stream=True) as stream_resp:
             event_data = ""
