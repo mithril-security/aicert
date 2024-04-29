@@ -259,26 +259,27 @@ class Client:
                     if len(event_data) >= 10:
                         event_data = event_data[:-10]
                     print(event_data.replace("\\", ""))
-        # sleep(500)
+
         ## Upload to storage account 
         account_name = 'aicertstorage'
         container_name = 'aicertcontainer'
-        # ps = subprocess.Popen(('az', 'storage', 'account', 'keys', 'list', '-g', 'aicert-fli', '-n', account_name), stdout=subprocess.PIPE)
-        # account_key = subprocess.check_output(('jq', '.[1].value'), stdin=ps.stdout)
-        # account_key = account_key.decode('utf-8')
-        # account_key = json.loads(account_key)
-        # print(account_key)
+
         expiry = datetime.now() + timedelta(hours=1)
         expiry = expiry.strftime("%Y-%m-%dT%H:%MZ")
         token = subprocess.run(['az', 'storage', 'container', 'generate-sas', '-n', container_name, '--https-only', '--permissions', 'dlrw', '--expiry', expiry, '-o', 'tsv', '--account-name', account_name], capture_output=True, text=True)
         token = { 'token': token.stdout }
 
-        url_storage = self.__session.post(f"{self.__base_url}/storage-upload", data=json.dumps(token), headers={"Content-Type": "application/json"})
-        url = json.loads(url_storage.content)
-        
-        return url
-
-
+        ## Wait until outputs are zipped and ready for upload
+        while True:
+            res = self.__session.post(f"{self.__base_url}/storage-upload", data=json.dumps(token), headers={"Content-Type": "application/json"})            
+            if res.status_code == 204:
+                sleep(30)
+                continue
+            raise_for_status(
+                res, "Cannot upload outputs, internal error"
+            )
+            url = json.loads(res.content)
+            return url
 
     
     def wait_for_attestation(self) -> bytes:

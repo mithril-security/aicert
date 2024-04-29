@@ -360,8 +360,6 @@ class Builder:
                     training_time = time.time() - start_time
                     cls.__event_log.finetune_timing(training_time)
 
-                print("AXOLOLT RUNNING ENDS HERE")                    
-
                 # Registering output and compression 
                 with zipfile.ZipFile(workspace / 'finetuned-model.zip','w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(workspace / "lora-out"):

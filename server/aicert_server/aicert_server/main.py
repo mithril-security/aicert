@@ -75,8 +75,9 @@ class SASToken(BaseModel):
 
 @app.post("/storage-upload")
 async def storage_upload(sastoken: SASToken):
-    print("token is ")
-    print(sastoken.token)
+    if not Builder.poll_finetune():
+        return Response(status_code=204)
+
     if len(sastoken.token) <= 0:
         raise HTTPException(
             status_code=403, detail="SAS Token Invalid or incorrect."
@@ -87,7 +88,6 @@ async def storage_upload(sastoken: SASToken):
     model_uploader.upload_model()
 
     return JSONResponse(content={"model link": model_uploader.get_link()}, status_code=202)
-    # return model_uploader.get_link()
 
 
 
