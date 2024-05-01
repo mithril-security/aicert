@@ -23,11 +23,13 @@ from .requests_adapter import ForcedIPHTTPSAdapter
 from .verify import (
     PCR_FOR_MEASUREMENT,
     PCR_FOR_CERTIFICATE,
+    PCR_FOR_OUTPUT_MEASUREMENT,
     check_event_log,
     check_quote,
     decode_b64_encoding,
     verify_ak_cert,
     check_server_cert,
+    check_container_ids,
     check_os_pcrs
 )
 
@@ -298,32 +300,6 @@ class Client:
                 res, "Cannot retrieve attestation, build likely failed"
             )
             return res.content
-    
-
-    def download_outputs(self, dir: Path, pattern: Optional[str] = None, verbose: bool = False) -> None:
-        """Retrieve outputs (build artifacts) using a glob pattern
-        
-        Args:
-            dir (Path): Where to store the downloaded files
-            pattern (str, optinal): Glob pattern to filter the artifacts. If not provided,
-                the client defaults to using the pattern defined in the config file.
-            verbose (bool, default = False): Whether to display information about the downloads
-                in stdout.
-        """
-        pattern = pattern if pattern is not None else self.__cfg.build.outputs
-        pattern = urllib.parse.quote(pattern, safe="")
-        
-        res = self.__session.get(f"{self.__base_url}/outputs?pattern={pattern}")
-        raise_for_status(res, "Cannot download outputs list")
-        file_list = FileList.parse_raw(res.text)
-
-        for filename in file_list.file_list:
-            if verbose:
-                log.info(f"Downloading output: {filename}")
-            res = self.__session.get(f"{self.__base_url}/outputs/{filename}")
-            raise_for_status(res, f"Cannot download output file {filename}")
-            with (dir / filename).open("wb") as f:
-                f.write(res.content)
 
 
     def verify_attestation(self, build_response: bytes, pcr_index = PCR_FOR_MEASUREMENT, verbose: bool = False, server_certs = ""):
@@ -395,6 +371,11 @@ class Client:
                 build_response["event_log"],
                 att_document["pcrs"]["sha256"][pcr_index],
             )
+            check_container_ids(event_log)
+            output_event_log = check_event_log(
+                build_response["output_event_log"],
+                att_document["pcrs"]["sha256"][PCR_FOR_OUTPUT_MEASUREMENT]
+            )
             if verbose:
                 typer.secho(f"✅ Valid event log", fg=typer.colors.GREEN)
                 print(yaml.safe_dump(event_log))
@@ -411,6 +392,8 @@ class Client:
                         typer.secho(f'Dataset: {eventlog["content"]["spec"]["resource_proto"]["repo"]} \n Hash: {eventlog["content"]["resolved"]["hash"]} \n ✅ Verified', fg=typer.colors.GREEN)
                     elif eventlog["event_type"]=="timing":
                         typer.secho(f'Time to train: {eventlog["content"]["spec"]["finetune_time"]} \n ✅ Verified', fg=typer.colors.GREEN)
+                    elif eventlog["event_type"]=="compute_consumed":
+                        typer.secho(f'Total floating point operations: {eventlog["content"]["spec"]["total_flos"]} \n ✅ Verified', fg=typer.colors.GREEN)
 
         elif pcr_index == PCR_FOR_CERTIFICATE:
             result = check_server_cert(

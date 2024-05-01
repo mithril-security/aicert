@@ -12,6 +12,7 @@ from typing import List, Dict, Any
 
 
 PCR_FOR_MEASUREMENT = 14
+PCR_FOR_OUTPUT_MEASUREMENT = 8
 
 
 def sha256_file(file_path: str) -> str:

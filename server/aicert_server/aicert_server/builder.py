@@ -9,7 +9,7 @@ import logging
 import yaml
 import zipfile
 
-from aicert_common.protocol import Resource, Build, Serve
+from aicert_common.protocol import Resource
 from aicert_server.cmd_line import CmdLine
 from aicert_server.event_log import EventLog
 from aicert_server.config_parser import AxolotlConfig
@@ -342,6 +342,7 @@ class Builder:
             workspace (Path): directory to mount at /mnt on the container and 
                 that contains the result of the finetuning 
         """
+        import json
         try:
             with cls.__event_log_lock:
                 cls.__finetune_framework = "axolotl"
@@ -367,6 +368,11 @@ class Builder:
                             zipf.write(os.path.join(root, file),
                                     os.path.relpath(os.path.join(root,file), os.path.join(workspace /"lora-out", '..'))
                             )
+                            if file == "trainer_state.json":
+                                path = os.path.join(root, file)
+                                with open(path) as file:
+                                    trainer_state = json.load(file)
+                                    cls.__event_log.finetune_flos(trainer_state["total_flos"])
         
                 cls.__register_outputs('finetuned-model.zip', workspace)
         

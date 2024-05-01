@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any, List, Tuple
 
 from aicert_common.protocol import Resource, Build
-from aicert_server.tpm import quote, cert_chain, tpm_extend_pcr, PCR_FOR_MEASUREMENT
+from aicert_server.tpm import quote, cert_chain, tpm_extend_pcr, PCR_FOR_MEASUREMENT, PCR_FOR_OUTPUT_MEASUREMENT
 
 
 class EventLog:
@@ -20,9 +20,10 @@ class EventLog:
 
     def __init__(self, simulation_mode: bool = False):
         self.__event_log = []
+        self.__output_event_log = []
         self.__simulation_mode = simulation_mode
 
-    def __append(self, event: Dict[str, Any]):
+    def __append(self, event: Dict[str, Any], outputs = False):
         """Private method: add an event to the event log, properly handling PCR extension
         
         Args:
@@ -31,10 +32,16 @@ class EventLog:
         event_json = json.dumps(event)
         if self.__simulation_mode:
             print(f"SIMULATION MODE: {event}")
+            self.__event_log.append(event_json)
         else:
-            hash_event = hashlib.sha256(event_json.encode()).hexdigest()
-            tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
-        self.__event_log.append(event_json)
+            if outputs:
+                hash_event = hashlib.sha256(event_json.encode()).hexdigest()
+                tpm_extend_pcr(PCR_FOR_OUTPUT_MEASUREMENT, hash_event)
+                self.__output_event_log.append(event_json)
+            else:
+                hash_event = hashlib.sha256(event_json.encode()).hexdigest()
+                tpm_extend_pcr(PCR_FOR_MEASUREMENT, hash_event)
+                self.__event_log.append(event_json)
 
     def build_request_event(self, build_request: Build) -> None:
         """Add a build request event to the event log
@@ -131,7 +138,8 @@ class EventLog:
                     {"spec": {"path": path}, "resolved": {"hash": hash}}
                     for path, hash in outputs
                 ],
-            }
+            },
+            outputs=True
         )
 
     def finetune_timing(self, elapsed_time: float) -> None:
@@ -149,24 +157,21 @@ class EventLog:
             }
         )
 
-    #def finetune(self, axolotl_config_filename, axolotl_config_hash, finetuning_image, image_hash) -> None:
-    #    """Add a finetune event to the event log
-    #    """
-    #    self.__append(
-    #        {
-    #            "event_type": "finetuning",
-    #            "content": [
-    #                {
-    #                    "spec": {"axolotl_config": axolotl_config_filename},
-    #                    "resolved": {"hash": axolotl_config_hash}
-    #                },
-    #                {
-    #                    "spec": {"image": finetuning_image},
-    #                    "resolved": {"hash": image_hash}
-    #                }
-    #            ]
-    #        }
-    #    )
+    def finetune_flos(self, total_flos: float) -> None:
+        """Adds the total floating point operations to finetune to the event log
+        
+        Args:
+            total_flos: total floating point operations to finetune
+        """
+        self.__append(
+            {
+                "event_type": "compute_consumed",
+                "content": {
+                    "spec": {"total_flos": total_flos},
+                }
+            }
+        )
+
 
     def attest(self, ca_cert="") -> Dict[str, Any]:
         """Return the full event log, the TPM quote and the certificate chain in the same dict
@@ -179,6 +184,7 @@ class EventLog:
         return {
             "ca_cert": ca_cert,
             "event_log": self.__event_log,
+            "output_event_log": self.__output_event_log,
             "remote_attestation": {"quote": quote(), "cert_chain": cert_chain()}
             if not self.__simulation_mode
             else {"simulation_mode": True},

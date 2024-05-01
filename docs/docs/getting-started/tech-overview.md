@@ -36,7 +36,7 @@ When the AI builder launches the `aicert` CLI command. Under the hood, AICert wi
 + Hash input values and register them to PCR14
 + Build a container with all the necessary inputs
 + Execute axolotl fintuning
-+ Hash outputs and register them to PCR14
++ Hash outputs and register them to PCR8
 + Request a signed quote from the Cloud provider containing all PCR values
 + Standardize quote details and return AI certificate to the end user
 
