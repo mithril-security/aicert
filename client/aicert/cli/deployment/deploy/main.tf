@@ -57,17 +57,6 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
   resource_group_name = data.azurerm_resource_group.rg.name
 
   security_rule {
-    name                       = "SSH"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-  security_rule {
     name                       = "HTTPS"
     priority                   = 1002
     direction                  = "Inbound"
@@ -143,32 +132,13 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
 
 }
 
-
-resource "azurerm_storage_account" "model_storage" {
-  name                     = var.storage_account
-  location                 = data.azurerm_resource_group.rg.location
-  resource_group_name      = data.azurerm_resource_group.rg.name
-  account_kind            = "StorageV2"
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+data "azurerm_storage_account" "model_storage" {
+  name                = var.storage_account
+  resource_group_name = var.resource_group_name
 }
 
-resource "azurerm_storage_container" "model_container" {
-  name                  = var.storage_container
-  storage_account_name  = azurerm_storage_account.model_storage.name
-  container_access_type = "private"
+data "azurerm_storage_container" "model_container" {
+  name                 = var.storage_container
+  storage_account_name = var.storage_account
 }
-
-# resource "azurerm_role_assignment" "model_storage" {
-#   scope                = azurerm_storage_account.model_storage.id
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = data.azurerm_client_config.current.object_id
-# }
-# resource "azurerm_storage_blob" "model_blob" {
-#   name                   = "model_finetune.zip"
-#   storage_account_name   = azurerm_storage_account.model_storage.name
-#   storage_container_name = azurerm_storage_container.model_container.name
-#   type                   = "Block"
-#   source                 = "model_finetune.zip"
-# }
 

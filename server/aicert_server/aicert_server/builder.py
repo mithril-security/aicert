@@ -72,6 +72,8 @@ class Builder:
     __finetune_thread: Optional[Thread] = None 
     __finetune_framework : str = "axolotl"
 
+    __output_filename: str = ""
+
     
     @classmethod
     def __register_axolotl_config(cls, workspace: Path, axolotl_config: AxolotlConfig) -> None:
@@ -361,8 +363,11 @@ class Builder:
                     training_time = time.time() - start_time
                     cls.__event_log.finetune_timing(training_time)
 
-                # Registering output and compression 
-                with zipfile.ZipFile(workspace / 'finetuned-model.zip','w', zipfile.ZIP_DEFLATED) as zipf:
+                # Registering output and compression
+                import uuid
+                random_string = str(uuid.uuid4())
+                cls.__output_filename = 'finetuned-model-' + random_string + '.zip'
+                with zipfile.ZipFile(workspace / cls.__output_filename,'w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(workspace / "lora-out"):
                         for file in files:
                             zipf.write(os.path.join(root, file),
@@ -374,7 +379,7 @@ class Builder:
                                     trainer_state = json.load(file)
                                     cls.__event_log.finetune_flos(trainer_state["total_flos"])
         
-                cls.__register_outputs('finetuned-model.zip', workspace)
+                cls.__register_outputs(cls.__output_filename, workspace)
         
         except HTTPException as e:
             cls.__exception = e
@@ -398,6 +403,9 @@ class Builder:
             return cls.__event_log.attest(ca_cert)
 
     
+    @classmethod
+    def get_output_file(cls) -> str:
+        return cls.__output_filename
 
     @classmethod
     def start_finetune(cls, workspace: Path, axolotl_config: AxolotlConfig) -> None:

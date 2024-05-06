@@ -46,7 +46,6 @@ upload_disk "os_disk" $OS_DISK_NAME
 echo "Uploaded OS disk"
 echo "$OS_DISK_NAME"
 
-
 ## Create OS Image
 DISK=$(az disk show -n $OS_DISK_NAME -g $AZ_RESOURCE_GROUP --query "id" | xargs )
 IMAGEDEF="aicert_image"
@@ -65,7 +64,11 @@ az sig image-version create --resource-group $AZ_RESOURCE_GROUP \
     --gallery-image-version 1.0.0 \
     --os-snapshot $DISK
 
+az storage account create -n $STORAGE_ACCOUNT -g $AZ_RESOURCE_GROUP -l $AZ_REGION --sku Standard_LRS
+
+az storage container create -n $STORAGE_CONTAINER --account-name $STORAGE_ACCOUNT
+
 ## Create terraform variables for resource group and gallery name
 file="client/aicert/cli/deployment/deploy/terraform.tfvars"
 
-echo -e "resource_group_name = \"$AZ_RESOURCE_GROUP\"\ngallery_name = \"$GALLERY_NAME\"" > $file 
+echo -e "resource_group_name = \"$AZ_RESOURCE_GROUP\"\ngallery_name = \"$GALLERY_NAME\"\nstorage_account = \"$STORAGE_ACCOUNT\"\nstorage_container = \"$STORAGE_CONTAINER\"" > $file 

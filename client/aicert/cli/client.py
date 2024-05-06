@@ -96,6 +96,8 @@ class Client:
         self.__base_url = "http://localhost:80"
         self.__session = requests.Session()
         self.__tf_home = Path.home() / ".aicert"
+        self.__storage_account = "aicertstorage"
+        self.__storage_container = "aicertcontainer"
 
         if self.__simulation_mode:
             warnings.warn("Running in simulation mode", RuntimeWarning)
@@ -147,6 +149,8 @@ class Client:
             Deployer.init(self.__tf_home)
             res = Deployer.launch_runner(self.__tf_home)
 
+            self.__storage_account = res["storage_account"]
+            self.__storage_container = res["storage_container"]
             self.__base_url = "https://aicert_worker"
 
             self.__session = requests.Session()
@@ -263,13 +267,15 @@ class Client:
                     print(event_data.replace("\\", ""))
 
         ## Upload to storage account 
-        account_name = 'aicertstorage'
-        container_name = 'aicertcontainer'
-
         expiry = datetime.now() + timedelta(hours=1)
         expiry = expiry.strftime("%Y-%m-%dT%H:%MZ")
-        token = subprocess.run(['az', 'storage', 'container', 'generate-sas', '-n', container_name, '--https-only', '--permissions', 'dlrw', '--expiry', expiry, '-o', 'tsv', '--account-name', account_name], capture_output=True, text=True)
-        token = { 'token': token.stdout }
+        token = ""
+        while token == "":
+            token = subprocess.run(['az', 'storage', 'container', 'generate-sas', '-n', self.__storage_container, '--https-only', '--permissions', 'dlrw', '--expiry', expiry, '-o', 'tsv', '--account-name', self.__storage_account], capture_output=True, text=True).stdout
+        token = { "token": token,
+            "storage_account": self.__storage_account,
+            "storage_container": self.__storage_container
+        }
 
         ## Wait until outputs are zipped and ready for upload
         while True:

@@ -15,21 +15,19 @@ import base64
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response, JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
 import hashlib
 import yaml
 import logging
 from sh import tail
-import time
 import json
 import asyncio
 import subprocess
 import select
 from pydantic import BaseModel
 
-from aicert_common.protocol import FileList, AxolotlConfigString
+from aicert_common.protocol import AxolotlConfigString
 from aicert_server.config_parser import AxolotlConfig
 from aicert_server.builder import Builder, SIMULATION_MODE
 from aicert_server.tpm import tpm_extend_pcr, tpm_read_pcr
@@ -72,6 +70,8 @@ def start_finetune() -> None:
 
 class SASToken(BaseModel):
     token: str
+    storage_account: str
+    storage_container: str
 
 @app.post("/storage-upload")
 async def storage_upload(sastoken: SASToken):
@@ -82,12 +82,17 @@ async def storage_upload(sastoken: SASToken):
         raise HTTPException(
             status_code=403, detail="SAS Token Invalid or incorrect."
         )
+    
+    output_filename = Builder.get_output_file()
     token = sastoken.token
-    url_token = "https://aicertstorage.blob.core.windows.net/aicertcontainer/finetuned-model.zip?"+token
-    model_uploader = ModelUploader(url_token, WORKSPACE / "finetuned-model.zip")
+    storage_account = sastoken.storage_account
+    storage_container = sastoken.storage_container
+    url = "https://" + storage_account + ".blob.core.windows.net/" + storage_container + "/" + output_filename
+    url_token = url + "?" + token
+    model_uploader = ModelUploader(url_token, WORKSPACE / output_filename)
     model_uploader.upload_model()
 
-    return JSONResponse(content={"model link": model_uploader.get_link()}, status_code=202)
+    return JSONResponse(content={"model link": url}, status_code=202)
 
 
 

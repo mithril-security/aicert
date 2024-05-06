@@ -191,9 +191,19 @@ class Deployer:
             ["terraform", "output", "-raw", "public_ip_address"],
             cwd=dir,
         )
+        storage_account = Deployer.__run_subprocess(
+            ["terraform", "output", "-raw", "storage_account_name"],
+            cwd=dir,
+        )
+        storage_container = Deployer.__run_subprocess(
+            ["terraform", "output", "-raw", "storage_container_name"],
+            cwd=dir,
+        )
 
         return {
-            "runner_ip": vm_ip
+            "runner_ip": vm_ip,
+            "storage_account": storage_account,
+            "storage_container": storage_container
         }
 
     @classmethod
