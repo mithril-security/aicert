@@ -148,6 +148,14 @@ poetry shell
 poetry install
 ```
 
+### 3.1 - Copy measurements
+If the client is run on a different machine than the one on which the OS was built, copy the following measurements to the client machine:
++ container_measurements.json
++ measurements_azure.json
++ measurements_qemu.json (only required if the OS is being run locally for testing)
+
+Place these files in the `security_config` folder in the client.
+
 ## 4 - Finetune a model
 AIcert pefroms the following functions when the finetune command is run:
 - Creates a VM with the Mithril OS image
@@ -160,6 +168,8 @@ cd axolotl_yaml
 # This specifies the model, dataset, and training parameters
 aicert finetune
 ```
+
+We recommend placing each axolotl config in a dedicated folder so as not to overwrite the `attestation.json` (the AIBOM) returned after the finetuning during the next finetuning run.
 
 ### 4.1 - Changes to the Axolotl configuration file
 When Axolotl runs the fine-tuning, the container has no connection to the outside and can not pull other models that those gathered at the initialization part. 

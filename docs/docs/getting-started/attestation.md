@@ -46,13 +46,13 @@ At the boot stage, the stack is loaded piece by piece, starting with the UEFI. T
 
 #### Inputs
 
-We then download the base model and any resources as specified in the AICert config file. These inputs are hashed and stored in PCR14.
+We then download the base model and any resources as specified in the AICert config file. These inputs are hashed and stored in PCR 14.
 
 #### Outputs
 
-After performing training, we hash the outputs and store these hashes in PCR13.
+After performing training, we hash the outputs and store these hashes in PCR 8.
 
-![PCR-values](../../assets/PCR-values.png)
+![PCR-values](../../assets/new-pcr.png)
 
 AICert will then request a “quote”, containing all these measurements, which is signed by a hardware-derived key verified by the Cloud provider.
 
@@ -62,4 +62,9 @@ AICert will then request a “quote”, containing all these measurements, which
 
 When end users use the `verify()` method provided in our AICert Python library, AICert will check the values of each PCR in our AICert proof file against known values. This allows us to verify the full software stack used by AICert.
 
-However, the hashes in PCR13, PCR14 and PCR15 are not known values to AICert, so end users should verify these manually by comparing the values in our AICert proof file against known SHA256 (for GitHub commits) or SHA1 hashes (for other input files) for the input data.
+However, the hashes in PCR8, PCR14 and PCR15 are not known values to AICert, so end users should verify these manually by comparing the values in our AICert proof file against known SHA256 (for GitHub commits) or SHA1 hashes (for other input files) for the input data.
+
+The compute measurement in the attestation report is the reported compute from the tranformers trainer. This is a more accurate measurement of compute than estimating the upperbound of compute used using the peak FLOPS (from the GPU spec sheets) and the training time.
+
+The docker images (axolotl, aicert-base, caddy, aicert-server) are included in the OS image during the OS disk creation. A locally saved docker image does not retain the docker image digest (only present when pulled from a registry), it does, however, contain the image ID which is a local measurement but unchanging when reloaded from a locally saved tarball. 
+To enable verification of the docker images, we export the image ids of the containers during the OS disk creation in a file named `container_measurements.json`. These measurements are used during the verification process to ensure the right containers are used.

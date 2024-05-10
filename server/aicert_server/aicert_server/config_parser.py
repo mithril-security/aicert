@@ -46,7 +46,6 @@ class AxolotlConfig:
     @classmethod 
     def __extract_model(cls) -> None: 
         """Extracts the model repo and the hash 
-
         
         """
         cls.__modelname, cls.__modelhash = cls.config['base_model'].split("@")
@@ -58,7 +57,6 @@ class AxolotlConfig:
         """Extracts the dataset repo and the hash
         
         """
-
         cls.__datasetname, cls.__datasethash = cls.config['datasets'][0]['path'].split("@")
         if cls.config['datasets'][0]['name']:
             cls.__dataset_filename = cls.config['datasets'][0]['name']

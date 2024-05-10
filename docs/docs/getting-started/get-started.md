@@ -44,9 +44,11 @@ ________________________________________________________
 #### Step 1-A: Set Azure configuration
 We must first configure the Azure region and resource names before we begin creating the Mithril OS image.
 ```console
-AZ_RESOURCE_GROUP="your-resource-group"
-AZ_REGION="your-region"
-GALLERY_NAME="your-gallery-name"
+AZ_RESOURCE_GROUP="your_resource_group"
+AZ_REGION="your_region"
+GALLERY_NAME="your_gallery_name"
+STORAGE_ACCOUNT="your_storage"
+STORAGE_CONTAINER="your_container"
 ```
 
 The size of the Azure VM can be set in the file: variables.tf
@@ -61,7 +63,7 @@ The default size is Standard_NC24ads_A100_v4
 
 #### Step 1-B: Create the Mithril OS image
 
-We use mkosi to create an oS image containing the required containers for finetuning and attestation.
+We use mkosi to create an OS image containing the required containers for finetuning and attestation.
 The OS is a minimal image with all unnecessary services and modules removed and network restrictions in place.
 
 We've grouped a few steps into a script named `create_MithrilOS.sh`. This script creates the Mithril OS in a disk, uploads it to Azure and converts it into an image, and finally generates the measurements of the OS (which attest the contents of the disk)
@@ -81,7 +83,7 @@ az login
 + caddy: Caddy is a reverse-proxy container.
 + axolotl: Axolotl is a container containing the axolotl finetuning framework.
 
-> Inputs (pre-trained model, datasets) are downloaded from as specified in the AICert config file. We consider these as project `resources` and individually hash these files.
+> Inputs (pre-trained model, datasets) are downloaded from huggingface as specified in the AICert config file. We consider these as project `resources` and individually hash these files.
 
 The whole repo will be moved to a `/workspace/src` folder within our Docker container.
 
@@ -99,7 +101,7 @@ Finally, to launch the traceable training process and get back our AI certificat
 aicert finetune
 ```
 
-AICert will look for a yaml file names aicert.yaml in the current working directory and load it. If you want to use a configuration file with another name, you may use the config option (it must be in the current working directory).
+AICert will look for a yaml file named aicert.yaml in the current working directory and load it. If you want to use a configuration file with another name, you may use the config option (it must be in the current working directory).
 
 ```bash
 aicert finetune --config custom_config.yaml
@@ -138,6 +140,15 @@ The `verify()` method checks two things:
 If the proof file contains a false signature or any false values, an error will be raised. False hashed values could signal that the software stack of the VM used for training was misconfigured or even tampered with.
 
 If the `verify()`` method does not return any errors, it means that the AI certificate is genuine.
+
+### Sharing measurements
+
+If the client is run on a different machine than the one used to generate the OS disk, the following measurement files must be shared:
++ container_measurements.json
++ measurements_azure.json
++ measurements_qemu.json (only required if the OS is being run locally for testing)
+
+Place these files in the `security_config` folder in the client.
 
 ### Inspecting the proof file
 
