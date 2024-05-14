@@ -144,9 +144,10 @@ If the `verify()` method does not return any errors, it means that the AI certif
 ### Sharing measurements
 
 If the client is run on a different machine than the one used to generate the OS disk, the following measurement files must be shared:
-+ container_measurements.json
-+ measurements_azure.json
-+ measurements_qemu.json (only required if the OS is being run locally for testing)
+
++ `container_measurements.json`
++ `measurements_azure.json`
++ `measurements_qemu.json` (only required if the OS is being run locally for testing)
 
 Place these files in the `security_config` folder in the client.
 
