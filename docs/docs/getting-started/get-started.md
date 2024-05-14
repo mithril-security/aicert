@@ -139,7 +139,7 @@ The `verify()` method checks two things:
 
 If the proof file contains a false signature or any false values, an error will be raised. False hashed values could signal that the software stack of the VM used for training was misconfigured or even tampered with.
 
-If the `verify()`` method does not return any errors, it means that the AI certificate is genuine.
+If the `verify()` method does not return any errors, it means that the AI certificate is genuine.
 
 ### Sharing measurements
 
