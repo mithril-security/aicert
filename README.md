@@ -85,7 +85,7 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 ## Prerequisites
 To run this example, you will need acess to an Azure subscription with quota for VMs with GPUs.
 Install terraform and az cli. The client code requires python 3.11 or later.
-```console
+```bash
 # qemu-utils to resize disk to conform to azure disk specifications
 sudo apt-get update && sudo apt-get install qemu-utils tpm2-tools pesign jq
 # Azure CLI
@@ -108,7 +108,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 We must first configure the Azure region and resource names before we begin creating the Mithril OS image.
 
 The resource group name, gallery name and region can be set in the [upload_config.sh](upload_config.sh)
-```console
+```bash
 AZ_RESOURCE_GROUP="your-resource-group"
 AZ_REGION="your-region"
 GALLERY_NAME="your-gallery-name"
@@ -131,7 +131,7 @@ The OS image packages the server, reverse proxy and axolotl container images wit
 To make subsequent finetunes easier, the OS disk only needs to be built once and uploaded to Azure.
 
 The "create_MithrilOS.sh" script creates the disk, uploads it to Azure, and converts it into an OS image. It also generates the OS measurements.
-```console
+```bash
 # log in to Azure CLI
 az login
 
@@ -140,7 +140,7 @@ sudo ./create_MithrilOS.sh
 ```
 
 ## 3 - Install the client
-```console
+```bash
 cd client
 # If your default python is below python3.10
 poetry env use python3.11
@@ -150,9 +150,9 @@ poetry install
 
 ### 3.1 - Copy measurements
 If the client is run on a different machine than the one on which the OS was built, copy the following measurements to the client machine:
-+ container_measurements.json
-+ measurements_azure.json
-+ measurements_qemu.json (only required if the OS is being run locally for testing)
++ `container_measurements.json`
++ `measurements_azure.json`
++ `measurements_qemu.json` (only required if the OS is being run locally for testing)
 
 Place these files in the `security_config` folder in the client.
 
@@ -162,7 +162,7 @@ AIcert pefroms the following functions when the finetune command is run:
 - Connects to the server VM using aTLS
 - Sends the axolotl configuration in the aicert.yaml
 - Waits for the finetuned model and attestation report to be returned
-```console
+```bash
 cd axolotl_yaml
 # There is a sample axolotl configuration present in this folder named aicert.yaml
 # This specifies the model, dataset, and training parameters
