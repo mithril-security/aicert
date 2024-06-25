@@ -83,6 +83,10 @@ AICert addresses some of the most urgent concerns related to **AI provenance**. 
 
 
 ## Verification of an AIBOM:
+On successful finetuning of a model, an AIBOM is returned to the client. 
+
+It can be verified with the ```aicert verify``` command. The command verifies and prints out each component used in the fine-tuning, such as the model, dataset, compute used, fine-tuning configuration, etc.
+
 ![](verify.gif)
 
 
