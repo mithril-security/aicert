@@ -18,6 +18,7 @@
 
 [![Website][website-shield]][website-url]
 [![Blog][blog-shield]][blog-url]
+[![Docs][docs-shield]][docs-url]
 </div>
 
  <p align="center">
@@ -305,6 +306,8 @@ However, by combining both, we can have a solid foundation for the AI supply cha
 [linkedin-url]: https://www.linkedin.com/company/mithril-security-company/
 [website-url]: https://www.mithrilsecurity.io
 [website-shield]: https://img.shields.io/badge/website-000000?style=for-the-badge&colorB=555
+[docs-url]: https://aicert.mithrilsecurity.io/en/latest/
+[docs-shield]: https://img.shields.io/readthedocs/aicert?style=for-the-badge
 [blog-url]: https://blog.mithrilsecurity.io/
 [blog-shield]: https://img.shields.io/badge/Blog-000?style=for-the-badge&logo=ghost&logoColor=yellow&colorB=555
 [product-screenshot]: images/screenshot.png
