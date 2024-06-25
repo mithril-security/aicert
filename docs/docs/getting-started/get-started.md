@@ -139,14 +139,15 @@ The `verify()` method checks two things:
 
 If the proof file contains a false signature or any false values, an error will be raised. False hashed values could signal that the software stack of the VM used for training was misconfigured or even tampered with.
 
-If the `verify()`` method does not return any errors, it means that the AI certificate is genuine.
+If the `verify()` method does not return any errors, it means that the AI certificate is genuine.
 
 ### Sharing measurements
 
 If the client is run on a different machine than the one used to generate the OS disk, the following measurement files must be shared:
-+ container_measurements.json
-+ measurements_azure.json
-+ measurements_qemu.json (only required if the OS is being run locally for testing)
+
++ `container_measurements.json`
++ `measurements_azure.json`
++ `measurements_qemu.json` (only required if the OS is being run locally for testing)
 
 Place these files in the `security_config` folder in the client.
 
