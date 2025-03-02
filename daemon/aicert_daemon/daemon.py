@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import sys
 from typing import List, Optional
-
+from aicert_common.protocol import Runner
 from aicert_common.logging import log
 from aicert_common.errors import AICertException
 
@@ -171,7 +171,7 @@ class Dameon:
             pass
     
     @classmethod
-    def launch_runner(cls, dir: Path) -> None:
+    def launch_runner(cls, dir: Path, runner_config: Runner) -> None:
         """Launch runner
 
         Take terraform configuration from working directory
@@ -180,7 +180,7 @@ class Dameon:
             dir (Path): Working directory
         """
         Dameon.__tf_init(dir)
-        Dameon.__tf_apply(dir)
+        Dameon.__tf_apply(dir, {"platform":runner_config.platform, "instance_type":runner_config.instance_type})
 
         # run bash script to provision the VM
         Dameon.__run_subprocess(["bash", "provision.sh"], cwd=dir)
